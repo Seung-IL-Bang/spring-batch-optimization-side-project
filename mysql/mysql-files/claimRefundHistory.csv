@@ -1,0 +1,2 @@
+claim_refund_history_id,claim_id,seller_id,refund_cash_amount,promotion_discount_amount,coupon_discount_amount,refund_mileage_amount,subtract_delivery_amount,refund_delivery_amount,refund_at,created_at,updated_at
+1,1,1,10000.00,0.00,0.00,0.00,3000.00,0.00,2023-01-15 00:00:00,2023-01-15 00:00:00,2023-01-15 00:00:00

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: mysql-orders-deployment
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-orders
+  template:
+    metadata:
+      labels:
+        app: mysql-orders
+    spec:
+      containers:
+        - name: mysql-orders-container
+          image: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-orders-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: orders # Todo change this to a secret
+          ports:
+            - containerPort: 3306 # Todo change this to a configMap
+          imagePullPolicy: IfNotPresent
+#          volumeMounts:
+#            - mountPath: /var/lib/mysql
+#              name: mysql-persistent-storage
+#      volumes:
+#        - name: mysql-persistent-storage
+#          persistentVolumeClaim:
+#            claimName: mysql-orders-pvc
