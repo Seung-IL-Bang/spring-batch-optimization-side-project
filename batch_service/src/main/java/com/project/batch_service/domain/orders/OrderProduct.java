@@ -1,6 +1,7 @@
 package com.project.batch_service.domain.orders;
 
 import com.project.batch_service.domain.BaseEntity;
+import com.project.batch_service.domain.products.Products;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -13,13 +14,17 @@ public class OrderProduct extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_product_id")
-    private int orderProductId;
+    private Long orderProductId;
 
-    private Long orderId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private Orders order;
 
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Products product;
 
-    private int productCount;
+    private int quantity;
 
     @Enumerated(EnumType.STRING)
     private DeliveryStatus deliveryStatus;
@@ -28,8 +33,8 @@ public class OrderProduct extends BaseEntity {
 
     private LocalDateTime deliveryCompletedAt;
 
-    public OrderProduct purchaseConfirm() {
-        this.purchaseConfirmedAt = LocalDateTime.now();
+    public OrderProduct purchaseConfirm(LocalDateTime now) {
+        this.purchaseConfirmedAt = now;
         return this;
     }
 

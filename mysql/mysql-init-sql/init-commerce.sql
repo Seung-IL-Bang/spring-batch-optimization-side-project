@@ -13,10 +13,10 @@ CREATE TABLE products (
 
 DROP TABLE IF EXISTS seller;
 CREATE TABLE seller (
-    seller_id INT PRIMARY KEY AUTO_INCREMENT,
+    seller_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     seller_name VARCHAR(50),
     business_no VARCHAR(255),
-    default_delivery_amount INT,
+    default_delivery_amount DECIMAL(19, 2) DEFAULT 0.00,
     commission_rate DOUBLE,
     created_at DATETIME,
     updated_at DATETIME
@@ -28,7 +28,7 @@ CREATE TABLE orders (
     customer_id BIGINT,
     paid_pg_amount DECIMAL(19, 2) DEFAULT 0.00,
     promotion_discount_amount DECIMAL(19, 2) DEFAULT 0.00,
-    mileage_used_amount DECIMAL(19, 2) DEFAULT 0.00,
+    point_used_amount DECIMAL(19, 2) DEFAULT 0.00,
     coupon_discount_amount DECIMAL(19, 2) DEFAULT 0.00,
     paid_confirmed_at DATETIME,
     created_at DATETIME,
@@ -37,10 +37,10 @@ CREATE TABLE orders (
 
 DROP TABLE IF EXISTS order_product;
 CREATE TABLE order_product (
-   order_product_id INT PRIMARY KEY AUTO_INCREMENT,
+   order_product_id BIGINT PRIMARY KEY AUTO_INCREMENT,
    order_id BIGINT,
    product_id BIGINT,
-   product_count INT,
+   quantity INT,
    delivery_status VARCHAR(50),
    purchase_confirmed_at DATETIME NULL,
    delivery_completed_at DATETIME NULL,
@@ -85,6 +85,58 @@ CREATE TABLE claim_refund_history (
   refund_at DATETIME,
   created_at DATETIME,
   updated_at DATETIME
+);
+
+-- 셀러별 일일 정산 테이블
+DROP TABLE IF EXISTS daily_settlement;
+CREATE TABLE daily_settlement (
+  settlement_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  seller_id BIGINT NOT NULL,
+  settlement_date DATETIME NOT NULL,
+  total_order_count INT NOT NULL DEFAULT 0,
+  total_claim_count INT NOT NULL DEFAULT 0,
+  total_product_count INT NOT NULL DEFAULT 0,
+  total_quantity INT NOT NULL DEFAULT 0,
+  tax_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  sales_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  promotion_discount_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  coupon_discount_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  point_used_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  claim_shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  commission_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  total_settlement_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_seller_date (seller_id, settlement_date)
+);
+
+-- 상품별 정산 상세 테이블
+DROP TABLE IF EXISTS daily_settlement_detail;
+CREATE TABLE daily_settlement_detail (
+ daily_settlement_detail_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+ daily_settlement_id BIGINT NOT NULL,
+ product_id BIGINT NOT NULL,
+ order_product_id BIGINT,
+ order_id BIGINT,
+ quantity INT NOT NULL DEFAULT 0,
+ settlement_status VARCHAR(20) NOT NULL,
+ tax_type VARCHAR(20) NOT NULL,
+ tax_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ sales_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ promotion_discount_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ coupon_discount_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ point_used_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ claim_shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ commission_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ product_settlement_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ INDEX idx_settlement_id (daily_settlement_id),
+ INDEX idx_product_id (product_id),
+ INDEX idx_order_id (order_id),
+ FOREIGN KEY (daily_settlement_id) REFERENCES daily_settlement(settlement_id) ON DELETE CASCADE
 );
 
 USE commerce;
