@@ -2,11 +2,20 @@ package com.project.batch_service.domain.settlement;
 
 import com.project.batch_service.domain.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class DailySettlement extends BaseEntity {
 
     @Id
@@ -16,7 +25,7 @@ public class DailySettlement extends BaseEntity {
 
     private Long sellerId;
 
-    private LocalDateTime settlementDate;
+    private LocalDate settlementDate;
 
     private int totalOrderCount;
 

@@ -106,8 +106,8 @@ CREATE TABLE daily_settlement (
   claim_shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
   commission_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
   total_settlement_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  created_at DATETIME,
+  updated_at DATETIME,
   INDEX idx_seller_date (seller_id, settlement_date)
 );
 
@@ -131,8 +131,8 @@ CREATE TABLE daily_settlement_detail (
  claim_shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
  commission_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
  product_settlement_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
- created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
- updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ created_at DATETIME,
+ updated_at DATETIME,
  INDEX idx_settlement_id (daily_settlement_id),
  INDEX idx_product_id (product_id),
  INDEX idx_order_id (order_id),
@@ -225,7 +225,7 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
-(order_product_id, order_id, product_id, product_count, delivery_status,
+(order_product_id, order_id, product_id, quantity, delivery_status,
 @purchase_confirmed_at, @delivery_completed_at, created_at, updated_at)
 SET
 purchase_confirmed_at = NULLIF(@purchase_confirmed_at, 'null'),

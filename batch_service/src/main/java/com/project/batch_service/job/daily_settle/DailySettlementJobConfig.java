@@ -4,6 +4,8 @@ import com.project.batch_service.domain.orders.OrderProduct;
 import com.project.batch_service.domain.orders.repository.OrderProductRepository;
 import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
+import com.project.batch_service.domain.settlement.repository.DailySettlementDetailRepository;
+import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
@@ -35,13 +37,19 @@ public class DailySettlementJobConfig {
     private final PlatformTransactionManager transactionManager;
     private final EntityManagerFactory entityManagerFactory;
     private final OrderProductRepository orderProductRepository;
+    private final DailySettlementRepository dailySettlementRepository;
+    private final DailySettlementDetailRepository dailySettlementDetailRepository;
+
+    private final CreateDailySettlementStepConfig createDailySettlementStepConfig;
 
     @Bean
     public Job dailySettlementJob() {
         return new JobBuilder(DAILY_SETTLEMENT_JOB, jobRepository)
                 .start(purchaseConfirmedStep())
-//                .next(plusSettlementStep())
+                .next(createDailySettlementStep())
+                .next(plusSettlementDetailStep())
 //                .next(minusSettlementStep())
+//                .next(aggregateDailySettlementStep())
                 .build();
         //todo createDailySettlementStep
     }
@@ -57,12 +65,22 @@ public class DailySettlementJobConfig {
     }
 
     @Bean
-    public Step plusSettlementStep() {
+    public Step createDailySettlementStep() {
+        return new StepBuilder("createDailySettlementStep", jobRepository)
+                .<SellerDto, DailySettlement>chunk(CHUNK_SIZE, transactionManager)
+                .reader(createDailySettlementStepConfig.sellerReader(null))
+                .processor(createDailySettlementStepConfig.dailySettlementProcessor(null))
+                .writer(createDailySettlementStepConfig.dailySettlementWriter())
+                .build();
+    }
+
+    @Bean
+    public Step plusSettlementDetailStep() {
         return new StepBuilder(PLUS_SETTLEMENT_STEP, jobRepository)
                 .<OrderProduct, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
                 .reader(dailyPlusSettlementJpaItemReader())
-//                .processor()
-//                .writer()
+                .processor(dailyPlusSettlementItemProcessor())
+                .writer(dailyPlusSettlementItemWriter())
                 .build();
     }
 
@@ -122,7 +140,7 @@ public class DailySettlementJobConfig {
     @Bean
     public ItemProcessor<OrderProduct, DailySettlementDetail> dailyPlusSettlementItemProcessor() {
         return (orderProduct) -> {
-            PositiveDailySettlementCollection collection = new PositiveDailySettlementCollection(orderProduct);
+            PositiveDailySettlementCollection collection = new PositiveDailySettlementCollection(orderProduct, dailySettlementRepository);
             return collection.getDailySettlementDetail();
         };
     }
@@ -130,9 +148,8 @@ public class DailySettlementJobConfig {
     @Bean
     public ItemWriter<DailySettlementDetail> dailyPlusSettlementItemWriter() {
         return (dailySettlementDetails) -> {
-
             for (DailySettlementDetail dailySettlementDetail : dailySettlementDetails) {
-
+                dailySettlementDetailRepository.save(dailySettlementDetail);
             }
         };
     }
