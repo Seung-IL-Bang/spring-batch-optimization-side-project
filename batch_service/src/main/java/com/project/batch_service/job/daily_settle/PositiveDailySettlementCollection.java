@@ -39,8 +39,9 @@ public class PositiveDailySettlementCollection {
 
         // todo : orderProduct snapshot 을 이용하여 정산금액 계산 why??? Products 테이블의 sellPrice 는 변동성이 존재하기 때문.
         BigDecimal taxAmount = new TaxCalculator(product).getTaxAmount();
-        BigDecimal productSettlementAmount = new ProductSettlementAmountCalculator(product, order, seller).getProductSettlementAmount();
         BigDecimal commissionAmount = new CommissionAmountCalculator(product).getCommissionAmount();
+        BigDecimal productSettlementAmount = new ProductSettlementAmountCalculator(product, order, seller, commissionAmount, taxAmount)
+                .getProductSettlementAmount();
 
         return DailySettlementDetail.builder()
                 .dailySettlementId(dailySettlement.getSettlementId())
@@ -50,7 +51,7 @@ public class PositiveDailySettlementCollection {
                 .quantity(quantity)
                 .taxType(product.getTaxType())
                 .taxAmount(taxAmount)
-                .salesAmount(order.getPaidPgAmount())
+                .salesAmount(product.getSellPrice().multiply(BigDecimal.valueOf(quantity))) // todo 검증: order.getPaidPgAmount => product.getSellPrice() * quantity
                 .promotionDiscountAmount(order.getPromotionDiscountAmount())
                 .couponDiscountAmount(order.getPromotionDiscountAmount())
                 .pointUsedAmount(order.getPointUsedAmount())

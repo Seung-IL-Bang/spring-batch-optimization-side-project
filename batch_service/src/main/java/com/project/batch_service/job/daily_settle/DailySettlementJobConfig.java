@@ -42,6 +42,15 @@ public class DailySettlementJobConfig {
 
     private final CreateDailySettlementStepConfig createDailySettlementStepConfig;
 
+    /**
+     * TODO
+     * 1. 마이너스 정산
+     * 2. 일일 정산 집계
+     * 3. csv 파일 데이터 정합성 맞춰서 테스트
+     * 4. 정산 검증
+     */
+
+
     @Bean
     public Job dailySettlementJob() {
         return new JobBuilder(DAILY_SETTLEMENT_JOB, jobRepository)
@@ -51,7 +60,7 @@ public class DailySettlementJobConfig {
 //                .next(minusSettlementStep())
 //                .next(aggregateDailySettlementStep())
                 .build();
-        //todo createDailySettlementStep
+        //todo
     }
 
     @Bean
