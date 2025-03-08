@@ -18,7 +18,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 
 @Configuration
 @RequiredArgsConstructor
@@ -63,7 +62,7 @@ public class CreateDailySettlementStepConfig {
 
                     }
                 })
-                .pageSize(100)
+                .pageSize(1000)
                 .build();
     }
 
@@ -94,6 +93,7 @@ public class CreateDailySettlementStepConfig {
                     .shippingFee(BigDecimal.ZERO)
                     .claimShippingFee(BigDecimal.ZERO)
                     .commissionAmount(BigDecimal.ZERO)
+                    .TotalSettlementAmount(BigDecimal.ZERO)
                     .build();
         };
     }

@@ -5,11 +5,13 @@ import com.project.batch_service.domain.products.TaxType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Entity
+@Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,7 +21,9 @@ public class DailySettlementDetail extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long dailySettlementDetailId;
 
-    private Long dailySettlementId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "daily_settlement_id")
+    private DailySettlement dailySettlement;
 
     private Long productId;
 
@@ -43,5 +47,5 @@ public class DailySettlementDetail extends BaseEntity {
     private BigDecimal shippingFee = BigDecimal.ZERO;
     private BigDecimal claimShippingFee = BigDecimal.ZERO;
     private BigDecimal commissionAmount = BigDecimal.ZERO;
-    private BigDecimal productSettlementAmount = BigDecimal.ZERO;
+    private BigDecimal settlementAmount = BigDecimal.ZERO;
 }

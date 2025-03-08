@@ -24,7 +24,9 @@ public class OrderProduct extends BaseEntity {
     @JoinColumn(name = "product_id")
     private Products product;
 
-    private int quantity;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_product_snapshot_id")
+    private OrderProductSnapshot orderProductSnapshot;
 
     @Enumerated(EnumType.STRING)
     private DeliveryStatus deliveryStatus;

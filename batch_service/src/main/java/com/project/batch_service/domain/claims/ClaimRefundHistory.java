@@ -20,17 +20,23 @@ public class ClaimRefundHistory extends BaseEntity {
 
     private Long sellerId;
 
-    private BigDecimal refundCashAmount = BigDecimal.ZERO;
+    private BigDecimal refundSalesAmount = BigDecimal.ZERO;
 
-    private BigDecimal promotionDiscountAmount = BigDecimal.ZERO;
+    private BigDecimal refundPromotionAmount = BigDecimal.ZERO;
 
-    private BigDecimal couponDiscountAmount = BigDecimal.ZERO;
+    private BigDecimal refundCouponAmount = BigDecimal.ZERO;
 
-    private BigDecimal refundMileageAmount = BigDecimal.ZERO;
-
-    private BigDecimal subtractDeliveryAmount = BigDecimal.ZERO;
+    private BigDecimal refundPointAmount = BigDecimal.ZERO;
 
     private BigDecimal refundDeliveryAmount = BigDecimal.ZERO;
+
+    private BigDecimal extraDeliveryAmount = BigDecimal.ZERO;
+
+    private BigDecimal refundCommissionAmount = BigDecimal.ZERO;
+
+    private BigDecimal refundTaxAmount = BigDecimal.ZERO;
+
+    private BigDecimal refundSettlementAmount = BigDecimal.ZERO;
 
     private LocalDateTime refundAt;
 

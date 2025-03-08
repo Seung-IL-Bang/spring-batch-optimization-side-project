@@ -2,17 +2,14 @@ package com.project.batch_service.domain.settlement;
 
 import com.project.batch_service.domain.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -43,4 +40,5 @@ public class DailySettlement extends BaseEntity {
     private BigDecimal shippingFee = BigDecimal.ZERO;
     private BigDecimal claimShippingFee = BigDecimal.ZERO;
     private BigDecimal commissionAmount = BigDecimal.ZERO;
+    private BigDecimal TotalSettlementAmount = BigDecimal.ZERO;
 }

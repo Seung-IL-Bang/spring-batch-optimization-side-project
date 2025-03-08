@@ -1,2 +1,3 @@
-claim_refund_history_id,claim_id,seller_id,refund_cash_amount,promotion_discount_amount,coupon_discount_amount,refund_mileage_amount,subtract_delivery_amount,refund_delivery_amount,refund_at,created_at,updated_at
-1,1,1,10000.00,0.00,0.00,0.00,3000.00,0.00,2023-01-15 00:00:00,2023-01-15 00:00:00,2023-01-15 00:00:00
+claim_refund_history_id,claim_id,seller_id,refund_sales_amount,refund_promotion_amount,refund_coupon_amount,refund_point_amount,refund_delivery_amount,extra_delivery_amount,refund_commission_amount,refund_tax_amount,refund_settlement_amount,refund_at,created_at,updated_at
+1,1,1,100000.00,3000.00,0.00,0.00,3000.00,2500.00,10000.00,9090.91,81590.91,"2023-01-15 10:30:00","2023-01-15 10:30:00","2023-01-15 10:30:00"
+2,2,2,30000.00,0.00,4000.00,1000.00,0.00,0.00,3750.00,2727.27,18522.73,"2023-01-16 14:45:00","2023-01-16 14:45:00","2023-01-16 14:45:00"

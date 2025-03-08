@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.ItemProcessor;
@@ -23,6 +24,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class DailySettlementJobConfig {
     public static final String DAILY_SETTLEMENT_JOB = "dailySettlementJob";
     public static final String PURCHASE_CONFIRMED_STEP = DAILY_SETTLEMENT_JOB + "_purchaseConfirmedStep";
     public static final String PLUS_SETTLEMENT_STEP = DAILY_SETTLEMENT_JOB + "_plusSettlementStep";
+    public static final String MINUS_SETTLEMENT_STEP = DAILY_SETTLEMENT_JOB + "_minusSettlementStep";
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
@@ -41,10 +44,12 @@ public class DailySettlementJobConfig {
     private final DailySettlementDetailRepository dailySettlementDetailRepository;
 
     private final CreateDailySettlementStepConfig createDailySettlementStepConfig;
+    private final AggregateDailySettlementStepConfig aggregateDailySettlementStepConfig;
 
     /**
      * TODO
-     * 1. 마이너스 정산
+     * 0. DailySettlement (sellerId, settlementDate) UNIQUE
+     * 1. 마이너스 정산 (ok)
      * 2. 일일 정산 집계
      * 3. csv 파일 데이터 정합성 맞춰서 테스트
      * 4. 정산 검증
@@ -54,13 +59,13 @@ public class DailySettlementJobConfig {
     @Bean
     public Job dailySettlementJob() {
         return new JobBuilder(DAILY_SETTLEMENT_JOB, jobRepository)
+                .incrementer(new RunIdIncrementer())
                 .start(purchaseConfirmedStep())
                 .next(createDailySettlementStep())
                 .next(plusSettlementDetailStep())
-//                .next(minusSettlementStep())
-//                .next(aggregateDailySettlementStep())
+                .next(minusSettlementStep())
+                .next(aggregateDailySettlementStep())
                 .build();
-        //todo
     }
 
     @Bean
@@ -83,23 +88,9 @@ public class DailySettlementJobConfig {
                 .build();
     }
 
-    @Bean
-    public Step plusSettlementDetailStep() {
-        return new StepBuilder(PLUS_SETTLEMENT_STEP, jobRepository)
-                .<OrderProduct, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
-                .reader(dailyPlusSettlementJpaItemReader())
-                .processor(dailyPlusSettlementItemProcessor())
-                .writer(dailyPlusSettlementItemWriter())
-                .build();
-    }
-
-    @Bean
-    public Step minusSettlementStep() {
-        return null;
-    }
-
 
     // === purchaseConfirmedStep ===
+
     @Bean
     public JpaPagingItemReader<OrderProduct> deliveryCompletedJpaItemReader() {
         LocalDate now = LocalDate.now();
@@ -130,6 +121,17 @@ public class DailySettlementJobConfig {
     }
 
     // === plusSettlementStep ===
+
+    @Bean
+    public Step plusSettlementDetailStep() {
+        return new StepBuilder(PLUS_SETTLEMENT_STEP, jobRepository)
+                .<OrderProduct, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
+                .reader(dailyPlusSettlementJpaItemReader())
+                .processor(dailyPlusSettlementItemProcessor())
+                .writer(dailyPlusSettlementItemWriter())
+                .build();
+    }
+
     @Bean
     public JpaPagingItemReader<OrderProduct> dailyPlusSettlementJpaItemReader() {
         LocalDate now = LocalDate.now();
@@ -162,5 +164,62 @@ public class DailySettlementJobConfig {
             }
         };
     }
+
     // === minusSettlementStep ===
+
+    @Bean
+    public Step minusSettlementStep() {
+        return new StepBuilder(MINUS_SETTLEMENT_STEP, jobRepository)
+                .<ClaimRefundDto, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
+                .reader(dailyMinusSettlementJpaItemReader())
+                .processor(dailyMinusSettlementItemProcessor())
+                .writer(dailyMinusSettlementItemWriter())
+                .build();
+    }
+
+    @Bean
+    public JpaPagingItemReader<ClaimRefundDto> dailyMinusSettlementJpaItemReader() {
+        LocalDate now = LocalDate.now();
+        LocalDateTime startTime = now.atStartOfDay();
+        LocalDateTime endTime = now.plusDays(1).atStartOfDay();
+        // 클레임 완료된 건들 정산
+
+        ClaimCompletedJpaQueryProvider queryProvider = new ClaimCompletedJpaQueryProvider(startTime, endTime);
+
+        return new JpaPagingItemReaderBuilder<ClaimRefundDto>()
+                .name("dailyMinusSettlementJpaItemReader")
+                .pageSize(CHUNK_SIZE)
+                .queryProvider(queryProvider)
+                .entityManagerFactory(entityManagerFactory)
+                .build();
+    }
+
+    @Bean
+    public ItemProcessor<ClaimRefundDto, DailySettlementDetail> dailyMinusSettlementItemProcessor() {
+        return (claimRefundDto) -> {
+            NegativeDailySettlementCollection collection = new NegativeDailySettlementCollection(claimRefundDto, dailySettlementRepository);
+            return collection.getDailySettlementDetail();
+        };
+    }
+
+    @Bean
+    public ItemWriter<DailySettlementDetail> dailyMinusSettlementItemWriter() {
+        return (dailySettlementDetails) -> {
+            ;
+            for (DailySettlementDetail dailySettlementDetail : dailySettlementDetails) {
+                dailySettlementDetailRepository.save(dailySettlementDetail);
+            }
+        };
+    }
+
+    // === aggregateDailySettlementStep ===
+    @Bean
+    public Step aggregateDailySettlementStep() {
+        return new StepBuilder("aggregateDailySettlementStep", jobRepository)
+                .<AggregateDailySettlementStepConfig.SettlementAggregationResult, DailySettlement>chunk(CHUNK_SIZE, transactionManager)
+                .reader(aggregateDailySettlementStepConfig.aggregationResultReader(null))
+                .processor(aggregateDailySettlementStepConfig.aggregateDailySettlementProcessor())
+                .writer(aggregateDailySettlementStepConfig.aggregateDailySettlementWriter())
+                .build();
+    }
 }

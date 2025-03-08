@@ -40,10 +40,28 @@ CREATE TABLE order_product (
    order_product_id BIGINT PRIMARY KEY AUTO_INCREMENT,
    order_id BIGINT,
    product_id BIGINT,
-   quantity INT,
+   order_product_snapshot_id BIGINT,
    delivery_status VARCHAR(50),
    purchase_confirmed_at DATETIME NULL,
    delivery_completed_at DATETIME NULL,
+   created_at DATETIME,
+   updated_at DATETIME
+);
+
+DROP TABLE IF EXISTS order_product_snapshot;
+CREATE TABLE order_product_snapshot (
+   order_product_snapshot_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+   product_id BIGINT,
+   seller_id BIGINT,
+   quantity INT,
+   sell_price DECIMAL(19, 2) DEFAULT 0.00,
+   supply_price DECIMAL(19, 2) DEFAULT 0.00,
+   promotion_discount_amount DECIMAL(19, 2) DEFAULT 0.00,
+   point_used_amount DECIMAL(19, 2) DEFAULT 0.00,
+   coupon_discount_amount DECIMAL(19, 2) DEFAULT 0.00,
+   default_delivery_amount DECIMAL(19, 2) DEFAULT 0.00,
+   tax_rate INT,
+   tax_type VARCHAR(50),
    created_at DATETIME,
    updated_at DATETIME
 );
@@ -76,15 +94,19 @@ CREATE TABLE claim_refund_history (
   claim_refund_history_id BIGINT PRIMARY KEY AUTO_INCREMENT,
   claim_id BIGINT,
   seller_id BIGINT,
-  refund_cash_amount DECIMAL(19, 2) DEFAULT 0.00,
-  promotion_discount_amount DECIMAL(19, 2) DEFAULT 0.00,
-  coupon_discount_amount DECIMAL(19, 2) DEFAULT 0.00,
-  refund_mileage_amount DECIMAL(19, 2) DEFAULT 0.00,
-  subtract_delivery_amount DECIMAL(19, 2) DEFAULT 0.00,
+  refund_sales_amount DECIMAL(19, 2) DEFAULT 0.00,
+  refund_promotion_amount DECIMAL(19, 2) DEFAULT 0.00,
+  refund_coupon_amount DECIMAL(19, 2) DEFAULT 0.00,
+  refund_point_amount DECIMAL(19, 2) DEFAULT 0.00,
   refund_delivery_amount DECIMAL(19, 2) DEFAULT 0.00,
+  extra_delivery_amount DECIMAL(19, 2) DEFAULT 0.00,
+  refund_commission_amount DECIMAL(19, 2) DEFAULT 0.00,
+  refund_tax_amount DECIMAL(19, 2) DEFAULT 0.00,
+  refund_settlement_amount DECIMAL(19, 2) DEFAULT 0.00,
   refund_at DATETIME,
   created_at DATETIME,
-  updated_at DATETIME
+  updated_at DATETIME,
+  FOREIGN KEY (claim_id) REFERENCES claim(claim_id) ON DELETE CASCADE
 );
 
 -- 셀러별 일일 정산 테이블
@@ -130,7 +152,7 @@ CREATE TABLE daily_settlement_detail (
  shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
  claim_shipping_fee DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
  commission_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
- product_settlement_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+ settlement_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
  created_at DATETIME,
  updated_at DATETIME,
  INDEX idx_settlement_id (daily_settlement_id),
@@ -215,6 +237,19 @@ COMMIT;
 -- 인덱스 재활성화
 ALTER TABLE orders ENABLE KEYS;
 
+ALTER TABLE order_product_snapshot DISABLE KEYS;
+
+LOAD DATA INFILE '/var/lib/mysql-files/orderProductSnapshot.csv'
+INTO TABLE order_product_snapshot
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS
+(order_product_snapshot_id, product_id, seller_id, quantity, sell_price, supply_price, promotion_discount_amount, point_used_amount, coupon_discount_amount, default_delivery_amount, tax_rate, tax_type, created_at, updated_at);
+
+COMMIT;
+ALTER TABLE order_product_snapshot ENABLE KEYS;
+
 -- 기존 인덱스 비활성화
 ALTER TABLE order_product DISABLE KEYS;
 
@@ -225,7 +260,7 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 ROWS
-(order_product_id, order_id, product_id, quantity, delivery_status,
+(order_product_id, order_id, product_id, order_product_snapshot_id, delivery_status,
 @purchase_confirmed_at, @delivery_completed_at, created_at, updated_at)
 SET
 purchase_confirmed_at = NULLIF(@purchase_confirmed_at, 'null'),
@@ -271,7 +306,10 @@ INTO TABLE claim_refund_history
 FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+IGNORE 1 ROWS
+(claim_refund_history_id, claim_id, seller_id, refund_sales_amount, refund_promotion_amount,
+refund_coupon_amount, refund_point_amount, refund_delivery_amount, extra_delivery_amount,
+refund_commission_amount, refund_tax_amount, refund_settlement_amount, refund_at, created_at, updated_at);
 
 -- 트랜잭션 커밋
 COMMIT;
