@@ -130,7 +130,8 @@ CREATE TABLE daily_settlement (
   total_settlement_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
   created_at DATETIME,
   updated_at DATETIME,
-  INDEX idx_seller_date (seller_id, settlement_date)
+--   INDEX idx_seller_date (seller_id, settlement_date)
+  UNIQUE KEY uk_daily_settlement_seller_date (seller_id, settlement_date)
 );
 
 -- 상품별 정산 상세 테이블
@@ -156,8 +157,8 @@ CREATE TABLE daily_settlement_detail (
  created_at DATETIME,
  updated_at DATETIME,
  INDEX idx_settlement_id (daily_settlement_id),
- INDEX idx_product_id (product_id),
- INDEX idx_order_id (order_id),
+--  INDEX idx_product_id (product_id),
+--  INDEX idx_order_id (order_id),
  FOREIGN KEY (daily_settlement_id) REFERENCES daily_settlement(settlement_id) ON DELETE CASCADE
 );
 

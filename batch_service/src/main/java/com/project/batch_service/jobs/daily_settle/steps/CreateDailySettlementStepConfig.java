@@ -1,8 +1,9 @@
 package com.project.batch_service.jobs.daily_settle.steps;
 
 import com.project.batch_service.domain.settlement.DailySettlement;
+import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
 import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
-import com.project.batch_service.jobs.daily_settle.utils.JobParameterUtils;
+import com.project.batch_service.jobs.JobParameterUtils;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +20,14 @@ import org.springframework.context.annotation.Configuration;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Configuration
 @RequiredArgsConstructor
 public class CreateDailySettlementStepConfig {
 
     private final EntityManagerFactory entityManagerFactory;
+    private final DailySettlementRepository dailySettlementRepository;
 
     @Bean
     @StepScope
@@ -72,10 +75,18 @@ public class CreateDailySettlementStepConfig {
     public ItemProcessor<SellerDto, DailySettlement> dailySettlementProcessor(
             @Value("#{jobParameters['settlementDate']}") String settlementDateStr
     ) {
-        return sellerDto -> DailySettlement
+        return sellerDto -> {
+
+            LocalDate settlementDate = JobParameterUtils.parseSettlementDate(settlementDateStr);
+
+            if (isExistsDailySettlementOfSeller(sellerDto, settlementDate)) {
+                return null;
+            }
+
+            return DailySettlement
                     .builder()
                     .sellerId(sellerDto.getSellerId())
-                    .settlementDate(JobParameterUtils.parseSettlementDate(settlementDateStr))
+                    .settlementDate(settlementDate)
                     .totalOrderCount(0)
                     .totalClaimCount(0)
                     .totalProductCount(0)
@@ -90,13 +101,20 @@ public class CreateDailySettlementStepConfig {
                     .commissionAmount(BigDecimal.ZERO)
                     .TotalSettlementAmount(BigDecimal.ZERO)
                     .build();
+        };
     }
 
     @Bean
     public JpaItemWriter<DailySettlement> dailySettlementWriter() {
+        // This writer will only receive non-null items from the processor
+        // (nulls are automatically filtered out in Spring Batch)
         JpaItemWriter<DailySettlement> jpaItemWriter = new JpaItemWriter<>();
         jpaItemWriter.setEntityManagerFactory(entityManagerFactory);
         return jpaItemWriter;
+    }
+
+    private boolean isExistsDailySettlementOfSeller(SellerDto sellerDto, LocalDate settlementDate) {
+        return dailySettlementRepository.findBySellerIdAndSettlementDate(sellerDto.getSellerId(), settlementDate).isPresent();
     }
 
 

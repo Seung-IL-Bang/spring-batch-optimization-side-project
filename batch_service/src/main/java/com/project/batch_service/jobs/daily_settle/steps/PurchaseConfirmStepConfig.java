@@ -3,7 +3,7 @@ package com.project.batch_service.jobs.daily_settle.steps;
 import com.project.batch_service.domain.orders.OrderProduct;
 import com.project.batch_service.domain.orders.repository.OrderProductRepository;
 import com.project.batch_service.jobs.daily_settle.steps.query.DeliveryCompletedJpaQueryProvider;
-import com.project.batch_service.jobs.daily_settle.utils.JobParameterUtils;
+import com.project.batch_service.jobs.JobParameterUtils;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.StepScope;

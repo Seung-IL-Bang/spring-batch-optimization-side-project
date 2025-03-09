@@ -2,7 +2,7 @@ package com.project.batch_service.jobs.daily_settle.steps;
 
 import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
-import com.project.batch_service.jobs.daily_settle.utils.JobParameterUtils;
+import com.project.batch_service.jobs.JobParameterUtils;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

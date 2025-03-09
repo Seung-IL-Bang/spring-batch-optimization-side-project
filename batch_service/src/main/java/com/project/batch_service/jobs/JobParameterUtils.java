@@ -1,4 +1,4 @@
-package com.project.batch_service.jobs.daily_settle.utils;
+package com.project.batch_service.jobs;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

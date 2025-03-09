@@ -2,11 +2,12 @@ package com.project.batch_service.jobs.daily_settle.steps;
 
 import com.project.batch_service.domain.orders.OrderProduct;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
+import com.project.batch_service.domain.settlement.SettlementStatus;
 import com.project.batch_service.domain.settlement.repository.DailySettlementDetailRepository;
 import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
-import com.project.batch_service.jobs.daily_settle.utils.JobParameterUtils;
-import com.project.batch_service.jobs.daily_settle.utils.PositiveDailySettlementCollection;
+import com.project.batch_service.jobs.JobParameterUtils;
 import com.project.batch_service.jobs.daily_settle.steps.query.PurchaseConfirmedJpaQueryProvider;
+import com.project.batch_service.jobs.daily_settle.utils.PositiveDailySettlementCollection;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Configuration
 @RequiredArgsConstructor
@@ -62,7 +64,20 @@ public class PlusSettlementDetailStepConfig {
     public ItemWriter<DailySettlementDetail> dailyPlusSettlementItemWriter() {
         return (dailySettlementDetails) -> {
             for (DailySettlementDetail dailySettlementDetail : dailySettlementDetails) {
-                dailySettlementDetailRepository.save(dailySettlementDetail);
+
+                Optional<DailySettlementDetail> optional = dailySettlementDetailRepository
+                        .findByDailySettlementAndOrderProductIdAndSettlementStatus(
+                                dailySettlementDetail.getDailySettlement(),
+                                dailySettlementDetail.getOrderProductId(),
+                                SettlementStatus.COMPLETED);
+                if (optional.isPresent()) {
+                    // if present, update the daily settlement detail
+                    DailySettlementDetail old = optional.get();
+                    old.updateDetail(dailySettlementDetail);
+                } else {
+                    // if not present, save the daily settlement detail
+                    dailySettlementDetailRepository.save(dailySettlementDetail);
+                }
             }
         };
     }

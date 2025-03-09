@@ -48,4 +48,19 @@ public class DailySettlementDetail extends BaseEntity {
     private BigDecimal claimShippingFee = BigDecimal.ZERO;
     private BigDecimal commissionAmount = BigDecimal.ZERO;
     private BigDecimal settlementAmount = BigDecimal.ZERO;
+
+    public void updateDetail(DailySettlementDetail dailySettlementDetail) {
+
+        this.quantity = dailySettlementDetail.getQuantity();
+        this.settlementStatus = dailySettlementDetail.getSettlementStatus();
+        this.taxAmount = dailySettlementDetail.getTaxAmount();
+        this.salesAmount = dailySettlementDetail.getSalesAmount();
+        this.promotionDiscountAmount = dailySettlementDetail.getPromotionDiscountAmount();
+        this.couponDiscountAmount = dailySettlementDetail.getCouponDiscountAmount();
+        this.pointUsedAmount = dailySettlementDetail.getPointUsedAmount();
+        this.shippingFee = dailySettlementDetail.getShippingFee();
+        this.claimShippingFee = dailySettlementDetail.getClaimShippingFee();
+        this.commissionAmount = dailySettlementDetail.getCommissionAmount();
+        this.settlementAmount = dailySettlementDetail.getSettlementAmount();
+    }
 }

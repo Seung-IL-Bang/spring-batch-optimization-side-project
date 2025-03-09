@@ -7,6 +7,14 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_daily_settlement_seller_date",
+                        columnNames = {"sellerId", "settlementDate"}
+                )
+        }
+)
 @Entity
 @Getter
 @Setter

@@ -1,11 +1,12 @@
 package com.project.batch_service.jobs.daily_settle.steps;
 
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
+import com.project.batch_service.domain.settlement.SettlementStatus;
 import com.project.batch_service.domain.settlement.repository.DailySettlementDetailRepository;
 import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
 import com.project.batch_service.jobs.daily_settle.steps.query.ClaimCompletedJpaQueryProvider;
 import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
-import com.project.batch_service.jobs.daily_settle.utils.JobParameterUtils;
+import com.project.batch_service.jobs.JobParameterUtils;
 import com.project.batch_service.jobs.daily_settle.utils.NegativeDailySettlementCollection;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Configuration
 @RequiredArgsConstructor
@@ -62,9 +64,20 @@ public class MinusSettlementDetailStepConfig {
     @Bean
     public ItemWriter<DailySettlementDetail> dailyMinusSettlementItemWriter() {
         return (dailySettlementDetails) -> {
-            ;
             for (DailySettlementDetail dailySettlementDetail : dailySettlementDetails) {
-                dailySettlementDetailRepository.save(dailySettlementDetail);
+
+                Optional<DailySettlementDetail> optional = dailySettlementDetailRepository
+                        .findByDailySettlementAndOrderProductIdAndSettlementStatus(
+                                dailySettlementDetail.getDailySettlement(),
+                                dailySettlementDetail.getOrderProductId(),
+                                SettlementStatus.REFUNDED
+                        );
+                if (optional.isPresent()) {
+                    DailySettlementDetail old = optional.get();
+                    old.updateDetail(dailySettlementDetail);
+                } else {
+                    dailySettlementDetailRepository.save(dailySettlementDetail);
+                }
             }
         };
     }
