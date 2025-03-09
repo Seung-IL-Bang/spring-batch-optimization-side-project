@@ -1,4 +1,4 @@
-package com.project.batch_service.job.daily_settle;
+package com.project.batch_service.jobs.daily_settle.steps.query;
 
 import com.project.batch_service.domain.orders.OrderProduct;
 import jakarta.persistence.Query;

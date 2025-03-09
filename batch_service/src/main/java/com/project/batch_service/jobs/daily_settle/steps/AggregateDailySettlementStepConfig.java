@@ -1,7 +1,8 @@
-package com.project.batch_service.job.daily_settle;
+package com.project.batch_service.jobs.daily_settle.steps;
 
 import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
+import com.project.batch_service.jobs.daily_settle.utils.JobParameterUtils;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,7 +19,6 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 @Slf4j
 @Configuration
@@ -32,13 +32,11 @@ public class AggregateDailySettlementStepConfig {
     @Bean
     @StepScope
     public JdbcCursorItemReader<SettlementAggregationResult> aggregationResultReader(
-            @Value("#{jobParameters['settlementDate']}") String settlementDateStr
+            @Value("#{jobParameters['settlementDate']}") String settlementDateStr,
+            @Value("#{jobParameters['chunkSize']}") Integer chunkSize
     ) {
-        // 정산일 파라미터 파싱 (기본값: 오늘)
-        LocalDate settlementDate = settlementDateStr != null ?
-                LocalDate.parse(settlementDateStr, DateTimeFormatter.ofPattern("yyyyMMdd")) :
-                LocalDate.now();
-
+        int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
+        LocalDate settlementDate = JobParameterUtils.parseSettlementDate(settlementDateStr);
         // 네이티브 쿼리를 사용한 집계 쿼리
         String nativeQuery = """
                     select
@@ -106,7 +104,7 @@ public class AggregateDailySettlementStepConfig {
         reader.setDataSource(dataSource);
         reader.setSql(nativeQuery);
         reader.setPreparedStatementSetter(ps -> ps.setDate(1, java.sql.Date.valueOf(settlementDate)));
-        reader.setFetchSize(1000);
+        reader.setFetchSize(CHUNK_SIZE);
         reader.setRowMapper((rs, rowNum) -> new SettlementAggregationResult(
                 rs.getLong("settlement_id"),
                 rs.getLong("seller_id"),

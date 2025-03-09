@@ -1,7 +1,6 @@
-package com.project.batch_service.job.daily_settle;
+package com.project.batch_service.jobs.daily_settle.utils;
 
 import com.project.batch_service.domain.orders.OrderProductSnapshot;
-import com.project.batch_service.domain.products.Products;
 import com.project.batch_service.domain.products.TaxType;
 
 import java.math.BigDecimal;

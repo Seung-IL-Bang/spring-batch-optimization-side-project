@@ -1,6 +1,8 @@
-package com.project.batch_service.job.daily_settle;
+package com.project.batch_service.jobs.daily_settle.steps;
 
 import com.project.batch_service.domain.settlement.DailySettlement;
+import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
+import com.project.batch_service.jobs.daily_settle.utils.JobParameterUtils;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +19,6 @@ import org.springframework.context.annotation.Configuration;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 @Configuration
 @RequiredArgsConstructor
@@ -27,13 +28,13 @@ public class CreateDailySettlementStepConfig {
 
     @Bean
     @StepScope
-    public JpaPagingItemReader<SellerDto> sellerReader(
-            @Value("#{jobParameters['settlementDate']}") String settlementDateStr) {
-        // 정산일 파라미터 파싱 (기본값: 오늘)
-        LocalDate settlementDate = settlementDateStr != null ?
-                LocalDate.parse(settlementDateStr, DateTimeFormatter.ofPattern("yyyyMMdd")) :
-                LocalDate.now();
-
+    public JpaPagingItemReader<SellerDto> sellerReader (
+            @Value("#{jobParameters['settlementDate']}") String settlementDateStr,
+            @Value("#{jobParameters['chunkSize']}") Integer chunkSize
+    ) {
+        // 정산일 (기본값: 오늘)
+        int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
+        LocalDate settlementDate = JobParameterUtils.parseSettlementDate(settlementDateStr);
         LocalDateTime startOfDay = settlementDate.atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
 
@@ -46,7 +47,7 @@ public class CreateDailySettlementStepConfig {
                     @Override
                     public Query createQuery() {
                         return this.getEntityManager().createQuery(
-                                        "SELECT new com.project.batch_service.job.daily_settle.SellerDto(p.seller.sellerId) " +
+                                        "SELECT new com.project.batch_service.jobs.daily_settle.dto.SellerDto(p.seller.sellerId) " +
                                                 "FROM OrderProduct op " +
                                                 "JOIN Products p ON p.productId = op.product.productId " +
                                                 "WHERE op.purchaseConfirmedAt is NOT NULL " +
@@ -62,7 +63,7 @@ public class CreateDailySettlementStepConfig {
 
                     }
                 })
-                .pageSize(1000)
+                .pageSize(CHUNK_SIZE)
                 .build();
     }
 
@@ -71,16 +72,10 @@ public class CreateDailySettlementStepConfig {
     public ItemProcessor<SellerDto, DailySettlement> dailySettlementProcessor(
             @Value("#{jobParameters['settlementDate']}") String settlementDateStr
     ) {
-        return sellerDto -> {
-
-            LocalDate settlementDate = settlementDateStr != null ?
-                    LocalDate.parse(settlementDateStr, DateTimeFormatter.ofPattern("yyyyMMdd")) :
-                    LocalDate.now();
-
-            return DailySettlement
+        return sellerDto -> DailySettlement
                     .builder()
                     .sellerId(sellerDto.getSellerId())
-                    .settlementDate(settlementDate)
+                    .settlementDate(JobParameterUtils.parseSettlementDate(settlementDateStr))
                     .totalOrderCount(0)
                     .totalClaimCount(0)
                     .totalProductCount(0)
@@ -95,7 +90,6 @@ public class CreateDailySettlementStepConfig {
                     .commissionAmount(BigDecimal.ZERO)
                     .TotalSettlementAmount(BigDecimal.ZERO)
                     .build();
-        };
     }
 
     @Bean

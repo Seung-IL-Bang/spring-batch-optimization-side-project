@@ -1,4 +1,4 @@
-package com.project.batch_service.job.daily_settle;
+package com.project.batch_service.jobs.daily_settle.utils;
 
 import com.project.batch_service.domain.orders.OrderProduct;
 import com.project.batch_service.domain.orders.OrderProductSnapshot;
@@ -9,7 +9,6 @@ import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
 import com.project.batch_service.domain.settlement.SettlementStatus;
 import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

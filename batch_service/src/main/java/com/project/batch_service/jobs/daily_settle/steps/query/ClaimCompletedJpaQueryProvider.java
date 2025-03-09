@@ -1,6 +1,6 @@
-package com.project.batch_service.job.daily_settle;
+package com.project.batch_service.jobs.daily_settle.steps.query;
 
-import com.project.batch_service.domain.orders.OrderProduct;
+import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
 import jakarta.persistence.Query;
 import org.springframework.batch.item.database.orm.AbstractJpaQueryProvider;
 
@@ -20,7 +20,7 @@ public class ClaimCompletedJpaQueryProvider extends AbstractJpaQueryProvider {
     public Query createQuery() {
         return this.getEntityManager()
                 .createQuery(
-                        "SELECT NEW com.project.batch_service.job.daily_settle.ClaimRefundDto(" +
+                        "SELECT NEW com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto(" +
                                 "c.claimId, " +
                                 "c.claimType, " +
                                 "c.claimStatus, " +
