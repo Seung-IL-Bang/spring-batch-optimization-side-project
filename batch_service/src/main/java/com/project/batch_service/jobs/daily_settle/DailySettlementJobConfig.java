@@ -107,13 +107,4 @@ public class DailySettlementJobConfig {
                 .writer(aggregateDailySettlementStepConfig.aggregateDailySettlementWriter())
                 .build();
     }
-
-    /**
-     * TODO
-     * 0. DailySettlement (sellerId, settlementDate) UNIQUE (ok)
-     * 1. 마이너스 정산 (ok)
-     * 2. 일일 정산 집계 (ok)
-     * 3. csv 파일 데이터 정합성 맞춰서 테스트
-     * 4. 정산 검증
-     */
 }
