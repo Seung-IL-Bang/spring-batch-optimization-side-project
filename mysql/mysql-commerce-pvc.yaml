@@ -2,10 +2,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 
 metadata:
-  name: mysql-orders-pvc
+  name: mysql-commerce-pvc
 
 spec:
-  storageClassName: mysql-storage # This should match the storageClassName in mysql-orders-pv.yaml
+  storageClassName: mysql-commerce-storage
   accessModes:
     - ReadWriteOnce
   resources:

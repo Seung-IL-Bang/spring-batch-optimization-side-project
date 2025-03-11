@@ -2,14 +2,14 @@ apiVersion: v1
 kind: Service
 
 metadata:
-  name: mysql-orders-service
+  name: mysql-commerce-service
 
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: mysql-orders
+    app: mysql-commerce
   ports:
     - protocol: TCP
       port: 3306
       targetPort: 3306
-      nodePort: 30000
+#      nodePort: 30000

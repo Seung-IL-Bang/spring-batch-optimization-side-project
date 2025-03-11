@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: mysql-commerce-deployment
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-commerce
+  template:
+    metadata:
+      labels:
+        app: mysql-commerce
+    spec:
+      containers:
+        - name: mysql-commerce-container
+          image: seungilbang/spring-batch-optimization:mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-commerce-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              value: commerce # Todo change this to a secret
+          ports:
+            - containerPort: 3306 # Todo change this to a configMap
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-persistent-storage
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-commerce-pvc
