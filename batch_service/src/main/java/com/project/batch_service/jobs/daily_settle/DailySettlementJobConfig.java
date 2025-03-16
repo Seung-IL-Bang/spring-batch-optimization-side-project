@@ -3,15 +3,14 @@ package com.project.batch_service.jobs.daily_settle;
 import com.project.batch_service.domain.orders.OrderProduct;
 import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
+import com.project.batch_service.jobs.JobParameterUtils;
 import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
 import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
 import com.project.batch_service.jobs.daily_settle.steps.*;
-import com.project.batch_service.jobs.JobParameterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
-import org.springframework.batch.core.configuration.support.DefaultBatchConfiguration;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
@@ -28,7 +27,7 @@ import static com.project.batch_service.constants.BatchNamingConstants.Step.*;
 @EnableTask
 @Configuration
 @RequiredArgsConstructor
-public class DailySettlementJobConfig extends DefaultBatchConfiguration {
+public class DailySettlementJobConfig {
 
     private final JobRepository jobRepository;
     private final PlatformTransactionManager transactionManager;
@@ -109,10 +108,5 @@ public class DailySettlementJobConfig extends DefaultBatchConfiguration {
                 .processor(aggregateDailySettlementStepConfig.aggregateDailySettlementProcessor())
                 .writer(aggregateDailySettlementStepConfig.aggregateDailySettlementWriter())
                 .build();
-    }
-
-    @Override
-    protected String getTablePrefix() {
-        return "BOOT3_BATCH_";
     }
 }
