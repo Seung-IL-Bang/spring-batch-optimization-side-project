@@ -1,0 +1,35 @@
+version: '3.8'
+services:
+  mysql-commerce:
+    image: mysql:latest
+    container_name: mysql-commerce
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: commerce
+    volumes:
+#      - ./mysql-volume/mysql-commerce-db:/var/lib/mysql
+      - ./mysql-files:/var/lib/mysql-files
+      - ./mysql-init-sql/init-commerce.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  mysql-statistics:
+    image: mysql:latest
+    container_name: mysql-statistics
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: statistics
+    volumes:
+#      - ./mysql-volume/mysql-statistics-db:/var/lib/mysql
+      - ./mysql-init-sql/init-statistics.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
