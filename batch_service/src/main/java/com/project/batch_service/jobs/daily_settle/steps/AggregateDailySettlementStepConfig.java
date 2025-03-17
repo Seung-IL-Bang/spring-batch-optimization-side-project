@@ -104,7 +104,7 @@ public class AggregateDailySettlementStepConfig {
         reader.setDataSource(dataSource);
         reader.setSql(nativeQuery);
         reader.setPreparedStatementSetter(ps -> ps.setDate(1, java.sql.Date.valueOf(settlementDate)));
-        reader.setFetchSize(CHUNK_SIZE);
+//        reader.setFetchSize(CHUNK_SIZE);
         reader.setRowMapper((rs, rowNum) -> new SettlementAggregationResult(
                 rs.getLong("settlement_id"),
                 rs.getLong("seller_id"),

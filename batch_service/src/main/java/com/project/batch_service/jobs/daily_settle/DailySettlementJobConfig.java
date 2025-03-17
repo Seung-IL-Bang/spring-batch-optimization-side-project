@@ -3,10 +3,10 @@ package com.project.batch_service.jobs.daily_settle;
 import com.project.batch_service.domain.orders.OrderProduct;
 import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
+import com.project.batch_service.jobs.JobParameterUtils;
 import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
 import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
 import com.project.batch_service.jobs.daily_settle.steps.*;
-import com.project.batch_service.jobs.JobParameterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -16,6 +16,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.task.configuration.EnableTask;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -23,6 +24,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import static com.project.batch_service.constants.BatchNamingConstants.Job.DAILY_SETTLE_JOB;
 import static com.project.batch_service.constants.BatchNamingConstants.Step.*;
 
+@EnableTask
 @Configuration
 @RequiredArgsConstructor
 public class DailySettlementJobConfig {
