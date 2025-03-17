@@ -43,8 +43,8 @@ public class ClaimCompletedJpaQueryProvider extends AbstractJpaQueryProvider {
                                 "ops.quantity, " +
                                 "ops.sellPrice, " +
                                 "ops.supplyPrice) " +
-                                "FROM Claim c " +
-                                "LEFT JOIN ClaimRefundHistory crh ON c.claimId = crh.claimId " +
+                                "FROM ClaimRefundHistory crh " +
+                                "LEFT JOIN Claim c ON c.claimId = crh.claimId " +
                                 "LEFT JOIN OrderProduct op ON op.orderProductId = c.orderProductId " +
                                 "LEFT JOIN OrderProductSnapshot ops ON ops.orderProductSnapshotId = op.orderProductSnapshot.orderProductSnapshotId " +
                                 "WHERE c.claimStatus = 'COMPLETED' " +
