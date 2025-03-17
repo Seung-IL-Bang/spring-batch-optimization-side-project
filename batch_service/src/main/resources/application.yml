@@ -1,12 +1,29 @@
 spring:
+  main:
+    web-application-type: none
   datasource:
-    url: jdbc:mysql://localhost:3306/commerce
+    url: jdbc:mysql://${MYSQL57_SERVICE_HOST:localhost}:${MYSQL57_SERVICE_PORT:3306}/dataflow?permitMysqlScheme
     username: root
-    password: 1234
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    password: yourpassword
+    driver-class-name: org.mariadb.jdbc.Driver
   batch:
     jdbc:
       initialize-schema: always
+      table-prefix: BOOT3_BATCH_
     job:
       name: dailySettlementJob
+      enabled: true
+
+management:
+  metrics:
+    export:
+      prometheus:
+        rsocket:
+          host: ${PROMETHEUS_RSOCKET_PROXY_SERVICE_HOST}
+          port: ${PROMETHEUS_RSOCKET_PROXY_SERVICE_PORT}
+          first-backoff: 10s
+          max-backoff: 10m
+          max-retries: 10
+server:
+  port: 8081
 
