@@ -4,7 +4,7 @@ metadata:
   name: mysql57
 spec:
   capacity:
-    storage: 1Gi
+    storage: 4Gi
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
@@ -23,6 +23,6 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 4Gi
   storageClassName: default
   volumeName: mysql57
