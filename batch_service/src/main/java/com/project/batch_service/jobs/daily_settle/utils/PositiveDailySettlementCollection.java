@@ -17,15 +17,17 @@ public class PositiveDailySettlementCollection {
 
     private final OrderProduct orderProduct;
     private final DailySettlementRepository dailySettlementRepository;
+    private final LocalDate settlementDate;
 
-    public PositiveDailySettlementCollection(OrderProduct orderProduct, DailySettlementRepository dailySettlementRepository) {
+    public PositiveDailySettlementCollection(OrderProduct orderProduct,
+                                             DailySettlementRepository dailySettlementRepository,
+                                             LocalDate settlementDate) {
         this.orderProduct = orderProduct;
         this.dailySettlementRepository = dailySettlementRepository;
+        this.settlementDate = settlementDate;
     }
 
     public DailySettlementDetail getDailySettlementDetail() {
-
-        LocalDate settlementDate = LocalDate.now(); // todo jop parameter 로 받아오기
 
         OrderProductSnapshot orderProductSnapshot = orderProduct.getOrderProductSnapshot();
 

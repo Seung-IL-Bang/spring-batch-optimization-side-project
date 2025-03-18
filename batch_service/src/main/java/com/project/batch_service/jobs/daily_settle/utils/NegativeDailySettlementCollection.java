@@ -13,15 +13,17 @@ public class NegativeDailySettlementCollection {
 
     private final ClaimRefundDto claimRefundDto;
     private final DailySettlementRepository dailySettlementRepository;
+    private final LocalDate settlementDate;
 
-    public NegativeDailySettlementCollection(ClaimRefundDto ClaimRefundDto, DailySettlementRepository dailySettlementRepository) {
+    public NegativeDailySettlementCollection(ClaimRefundDto ClaimRefundDto,
+                                             DailySettlementRepository dailySettlementRepository,
+                                             LocalDate settlementDate) {
         this.claimRefundDto = ClaimRefundDto;
         this.dailySettlementRepository = dailySettlementRepository;
+        this.settlementDate = settlementDate;
     }
 
     public DailySettlementDetail getDailySettlementDetail() {
-
-        LocalDate settlementDate = LocalDate.now(); // todo jop parameter 로 받아오기
 
         Long sellerId = claimRefundDto.getSellerId();
         TaxType taxType = claimRefundDto.getTaxType();

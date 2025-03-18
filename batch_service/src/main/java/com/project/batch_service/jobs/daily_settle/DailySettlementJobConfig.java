@@ -81,7 +81,7 @@ public class DailySettlementJobConfig {
         return new StepBuilder(PLUS_SETTLEMENT_STEP, jobRepository)
                 .<OrderProduct, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
                 .reader(plusSettlementDetailStepConfig.dailyPlusSettlementJpaItemReader(null, CHUNK_SIZE))
-                .processor(plusSettlementDetailStepConfig.dailyPlusSettlementItemProcessor())
+                .processor(plusSettlementDetailStepConfig.dailyPlusSettlementItemProcessor(null))
                 .writer(plusSettlementDetailStepConfig.dailyPlusSettlementItemWriter())
                 .build();
     }
@@ -93,7 +93,7 @@ public class DailySettlementJobConfig {
         return new StepBuilder(MINUS_SETTLEMENT_STEP, jobRepository)
                 .<ClaimRefundDto, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
                 .reader(minusSettlementDetailStepConfig.dailyMinusSettlementJpaItemReader(null, CHUNK_SIZE))
-                .processor(minusSettlementDetailStepConfig.dailyMinusSettlementItemProcessor())
+                .processor(minusSettlementDetailStepConfig.dailyMinusSettlementItemProcessor(null))
                 .writer(minusSettlementDetailStepConfig.dailyMinusSettlementItemWriter())
                 .build();
     }

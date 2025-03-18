@@ -53,9 +53,13 @@ public class PlusSettlementDetailStepConfig {
     }
 
     @Bean
-    public ItemProcessor<OrderProduct, DailySettlementDetail> dailyPlusSettlementItemProcessor() {
+    @StepScope
+    public ItemProcessor<OrderProduct, DailySettlementDetail> dailyPlusSettlementItemProcessor(
+            @Value("#{jobParameters['settlementDate']}") String settlementDateStr
+    ) {
+        LocalDate settlementDate = JobParameterUtils.parseSettlementDate(settlementDateStr);
         return (orderProduct) -> {
-            PositiveDailySettlementCollection collection = new PositiveDailySettlementCollection(orderProduct, dailySettlementRepository);
+            PositiveDailySettlementCollection collection = new PositiveDailySettlementCollection(orderProduct, dailySettlementRepository, settlementDate);
             return collection.getDailySettlementDetail();
         };
     }
