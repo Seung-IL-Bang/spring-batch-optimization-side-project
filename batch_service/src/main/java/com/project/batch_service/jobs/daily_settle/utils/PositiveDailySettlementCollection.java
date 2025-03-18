@@ -41,7 +41,9 @@ public class PositiveDailySettlementCollection {
         int quantity = orderProductSnapshot.getQuantity();
 
         DailySettlement dailySettlement = dailySettlementRepository.findBySellerIdAndSettlementDate(sellerId, settlementDate)
-                .orElseThrow(() -> new IllegalArgumentException("DailySettlement is not found"));
+                .orElse(null);
+
+        if (dailySettlement == null) { return null; }
 
         BigDecimal taxAmount = new TaxCalculator(orderProductSnapshot).getTaxAmount();
         BigDecimal commissionAmount = new CommissionAmountCalculator(orderProductSnapshot).getCommissionAmount();

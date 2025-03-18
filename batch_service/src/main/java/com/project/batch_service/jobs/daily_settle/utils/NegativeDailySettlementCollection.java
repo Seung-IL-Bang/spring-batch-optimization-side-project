@@ -33,7 +33,9 @@ public class NegativeDailySettlementCollection {
         Long productId = claimRefundDto.getProductId();
 
         DailySettlement dailySettlement = dailySettlementRepository.findBySellerIdAndSettlementDate(sellerId, settlementDate)
-                .orElseThrow(() -> new IllegalArgumentException("DailySettlement is not found"));
+                .orElse(null);
+
+        if (dailySettlement == null) { return null; }
 
         return DailySettlementDetail.builder()
                 .dailySettlement(dailySettlement)
