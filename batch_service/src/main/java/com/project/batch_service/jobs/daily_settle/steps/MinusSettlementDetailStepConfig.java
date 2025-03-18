@@ -54,9 +54,13 @@ public class MinusSettlementDetailStepConfig {
     }
 
     @Bean
-    public ItemProcessor<ClaimRefundDto, DailySettlementDetail> dailyMinusSettlementItemProcessor() {
+    @StepScope
+    public ItemProcessor<ClaimRefundDto, DailySettlementDetail> dailyMinusSettlementItemProcessor(
+            @Value("#{jobParameters['settlementDate']}") String settlementDateStr
+    ) {
+        LocalDate settlementDate = JobParameterUtils.parseSettlementDate(settlementDateStr);
         return (claimRefundDto) -> {
-            NegativeDailySettlementCollection collection = new NegativeDailySettlementCollection(claimRefundDto, dailySettlementRepository);
+            NegativeDailySettlementCollection collection = new NegativeDailySettlementCollection(claimRefundDto, dailySettlementRepository, settlementDate);
             return collection.getDailySettlementDetail();
         };
     }
