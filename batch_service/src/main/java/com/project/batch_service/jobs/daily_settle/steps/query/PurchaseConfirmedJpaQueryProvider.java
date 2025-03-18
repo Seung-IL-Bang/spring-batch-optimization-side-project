@@ -1,6 +1,7 @@
 package com.project.batch_service.jobs.daily_settle.steps.query;
 
 
+import com.project.batch_service.domain.orders.DeliveryStatus;
 import com.project.batch_service.domain.orders.OrderProduct;
 import jakarta.persistence.Query;
 import org.springframework.batch.item.database.orm.AbstractJpaQueryProvider;
@@ -23,10 +24,12 @@ public class PurchaseConfirmedJpaQueryProvider extends AbstractJpaQueryProvider 
                 .createQuery(
                  "SELECT op " +
                         "FROM OrderProduct op " +
-                        "WHERE op.purchaseConfirmedAt BETWEEN :startTime AND :endTime",
+                        "WHERE op.purchaseConfirmedAt BETWEEN :startTime AND :endTime " +
+                        "AND op.deliveryStatus = :deliveryStatus",
                         OrderProduct.class)
                 .setParameter("startTime", startTime)
-                .setParameter("endTime", endTime);
+                .setParameter("endTime", endTime)
+                .setParameter("deliveryStatus", DeliveryStatus.DELIVERED);
     }
 
     @Override
