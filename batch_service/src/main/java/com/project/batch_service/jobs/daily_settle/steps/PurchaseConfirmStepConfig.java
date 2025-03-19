@@ -34,7 +34,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PurchaseConfirmStepConfig {
 
-    private final OrderProductRepository orderProductRepository;
     private final DataSource dataSource;
 
     @Bean
