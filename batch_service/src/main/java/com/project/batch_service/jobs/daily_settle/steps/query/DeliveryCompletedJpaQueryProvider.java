@@ -28,7 +28,8 @@ public class DeliveryCompletedJpaQueryProvider extends AbstractJpaQueryProvider 
                                 "WHERE op.deliveryCompletedAt BETWEEN :startTime AND :endTime " +
                                 "AND op.deliveryStatus = 'DELIVERED' " +
                                 "AND op.purchaseConfirmedAt IS NULL " +
-                                "AND (cl.claimId IS NULL OR cl.completedAt IS NOT NULL)", OrderProduct.class)
+                                "AND (cl.claimId IS NULL OR cl.completedAt IS NOT NULL) " +
+                                "ORDER BY op.orderProductId ASC", OrderProduct.class)
                 .setParameter("startTime", startTime)
                 .setParameter("endTime", endTime);
     }
