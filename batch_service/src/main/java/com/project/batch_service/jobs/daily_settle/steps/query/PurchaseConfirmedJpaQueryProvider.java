@@ -25,11 +25,10 @@ public class PurchaseConfirmedJpaQueryProvider extends AbstractJpaQueryProvider 
                  "SELECT op " +
                         "FROM OrderProduct op " +
                         "WHERE op.purchaseConfirmedAt BETWEEN :startTime AND :endTime " +
-                        "AND op.deliveryStatus = :deliveryStatus",
+                        "ORDER BY op.orderProductId ASC",
                         OrderProduct.class)
                 .setParameter("startTime", startTime)
-                .setParameter("endTime", endTime)
-                .setParameter("deliveryStatus", DeliveryStatus.DELIVERED);
+                .setParameter("endTime", endTime);
     }
 
     @Override
