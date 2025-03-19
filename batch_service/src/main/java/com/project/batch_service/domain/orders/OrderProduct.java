@@ -4,11 +4,13 @@ import com.project.batch_service.domain.BaseEntity;
 import com.project.batch_service.domain.products.Products;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Setter
 public class OrderProduct extends BaseEntity {
 
     @Id
