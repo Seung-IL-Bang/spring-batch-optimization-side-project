@@ -58,7 +58,7 @@ public class PurchaseConfirmStepConfig {
         queryProviderFactory.setSelectClause("SELECT op.*");
         queryProviderFactory.setFromClause("FROM order_product op LEFT JOIN claim cl ON op.order_product_id = cl.order_product_id");
         queryProviderFactory.setWhereClause("""
-                WHERE op.delivery_completed_at BETWEEN :startTime AND :endTime\s
+                WHERE op.delivery_completed_at BETWEEN :startTime AND :endTime
                 AND op.delivery_status = 'DELIVERED'
                 AND op.purchase_confirmed_at IS NULL
                 AND (cl.claim_id IS NULL OR cl.completed_at IS NOT NULL)
