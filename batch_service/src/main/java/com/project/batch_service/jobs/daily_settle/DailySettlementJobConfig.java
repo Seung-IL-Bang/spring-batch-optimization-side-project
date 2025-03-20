@@ -5,11 +5,12 @@ import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
 import com.project.batch_service.jobs.JobParameterUtils;
 import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
+import com.project.batch_service.jobs.daily_settle.dto.OrderProductDTO;
 import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
+import com.project.batch_service.jobs.daily_settle.listener.StepPerformanceListener;
 import com.project.batch_service.jobs.daily_settle.steps.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
@@ -37,6 +38,8 @@ public class DailySettlementJobConfig {
     private final PlusSettlementDetailStepConfig plusSettlementDetailStepConfig;
     private final MinusSettlementDetailStepConfig minusSettlementDetailStepConfig;
     private final AggregateDailySettlementStepConfig aggregateDailySettlementStepConfig;
+
+    private final StepPerformanceListener stepPerformanceListener;
 
     @Bean
     public Job dailySettlementJob() throws Exception {
@@ -75,13 +78,17 @@ public class DailySettlementJobConfig {
 
     @Bean
     @JobScope
-    public Step plusSettlementDetailStep(@Value("#{jobParameters['chunkSize']}") Integer chunkSize) {
+    public Step plusSettlementDetailStep(@Value("#{jobParameters['chunkSize']}") Integer chunkSize) throws Exception {
         int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         return new StepBuilder(PLUS_SETTLEMENT_STEP, jobRepository)
-                .<OrderProduct, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
+                .<OrderProductDTO, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
                 .reader(plusSettlementDetailStepConfig.dailyPlusSettlementJpaItemReader(null, CHUNK_SIZE))
-                .processor(plusSettlementDetailStepConfig.dailyPlusSettlementItemProcessor(null))
+                .processor(plusSettlementDetailStepConfig.dailyPlusSettlementItemProcessor())
                 .writer(plusSettlementDetailStepConfig.dailyPlusSettlementItemWriter())
+                .listener((StepExecutionListener) stepPerformanceListener)
+                .listener((ItemReadListener<OrderProductDTO>) stepPerformanceListener)
+                .listener((ItemProcessListener<OrderProductDTO, DailySettlementDetail>) stepPerformanceListener)
+                .listener((ItemWriteListener<DailySettlementDetail>) stepPerformanceListener)
                 .build();
     }
 

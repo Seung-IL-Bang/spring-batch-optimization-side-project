@@ -1,24 +1,22 @@
 package com.project.batch_service.jobs.daily_settle.utils;
 
-import com.project.batch_service.domain.orders.OrderProductSnapshot;
-import com.project.batch_service.domain.seller.Seller;
+import com.project.batch_service.jobs.daily_settle.dto.OrderProductDTO;
 
 import java.math.BigDecimal;
 
 public class CommissionAmountCalculator {
 
-    private final OrderProductSnapshot orderProductSnapshot;
+    private final OrderProductDTO orderProductDto;
 
-    public CommissionAmountCalculator(OrderProductSnapshot orderProductSnapshot) {
-        this.orderProductSnapshot = orderProductSnapshot;
+    public CommissionAmountCalculator(OrderProductDTO orderProductDto) {
+        this.orderProductDto = orderProductDto;
     }
 
     public BigDecimal getCommissionAmount() {
-        BigDecimal sellPrice = orderProductSnapshot.getSellPrice();
-        BigDecimal supplyPrice = orderProductSnapshot.getSupplyPrice();
-        int quantity = orderProductSnapshot.getQuantity();
-        Seller seller = orderProductSnapshot.getSeller();
-        double commissionRate = seller.getCommissionRate();
+        BigDecimal sellPrice = orderProductDto.getSellPrice();
+        BigDecimal supplyPrice = orderProductDto.getSupplyPrice();
+        int quantity = orderProductDto.getQuantity();
+        double commissionRate = orderProductDto.getCommissionRate();
         BigDecimal marginUnit = sellPrice.subtract(supplyPrice);
         BigDecimal marginAmount = marginUnit.multiply(BigDecimal.valueOf(quantity));
         return calculateCommissionAmount(marginAmount, commissionRate);
