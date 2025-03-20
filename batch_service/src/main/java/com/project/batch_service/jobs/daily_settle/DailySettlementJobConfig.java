@@ -6,10 +6,10 @@ import com.project.batch_service.domain.settlement.DailySettlementDetail;
 import com.project.batch_service.jobs.JobParameterUtils;
 import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
 import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
+import com.project.batch_service.jobs.daily_settle.listener.StepPerformanceListener;
 import com.project.batch_service.jobs.daily_settle.steps.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
@@ -37,6 +37,8 @@ public class DailySettlementJobConfig {
     private final PlusSettlementDetailStepConfig plusSettlementDetailStepConfig;
     private final MinusSettlementDetailStepConfig minusSettlementDetailStepConfig;
     private final AggregateDailySettlementStepConfig aggregateDailySettlementStepConfig;
+
+    private final StepPerformanceListener stepPerformanceListener;
 
     @Bean
     public Job dailySettlementJob() throws Exception {
@@ -82,6 +84,10 @@ public class DailySettlementJobConfig {
                 .reader(plusSettlementDetailStepConfig.dailyPlusSettlementJpaItemReader(null, CHUNK_SIZE))
                 .processor(plusSettlementDetailStepConfig.dailyPlusSettlementItemProcessor(null))
                 .writer(plusSettlementDetailStepConfig.dailyPlusSettlementItemWriter())
+                .listener((StepExecutionListener) stepPerformanceListener)
+                .listener((ItemReadListener<OrderProduct>) stepPerformanceListener)
+                .listener((ItemProcessListener<OrderProduct, DailySettlementDetail>) stepPerformanceListener)
+                .listener((ItemWriteListener<DailySettlementDetail>) stepPerformanceListener)
                 .build();
     }
 

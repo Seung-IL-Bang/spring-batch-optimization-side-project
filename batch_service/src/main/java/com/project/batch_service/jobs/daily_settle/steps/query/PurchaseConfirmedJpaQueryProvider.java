@@ -20,13 +20,20 @@ public class PurchaseConfirmedJpaQueryProvider extends AbstractJpaQueryProvider 
 
     @Override
     public Query createQuery() {
+        // JPQL에서 JOIN FETCH를 사용하여 연관 엔티티를 한 번에 로딩
+        String jpql = """
+            SELECT op FROM OrderProduct op
+            JOIN FETCH op.orderProductSnapshot
+            JOIN FETCH op.order
+            JOIN FETCH op.product p
+            JOIN FETCH p.seller
+            WHERE op.purchaseConfirmedAt BETWEEN :startTime AND :endTime
+            AND op.deliveryStatus = 'DELIVERED'
+            ORDER BY op.orderProductId ASC
+            """;
+
         return this.getEntityManager()
-                .createQuery(
-                 "SELECT op " +
-                        "FROM OrderProduct op " +
-                        "WHERE op.purchaseConfirmedAt BETWEEN :startTime AND :endTime " +
-                        "ORDER BY op.orderProductId ASC",
-                        OrderProduct.class)
+                .createQuery(jpql, OrderProduct.class)
                 .setParameter("startTime", startTime)
                 .setParameter("endTime", endTime);
     }
