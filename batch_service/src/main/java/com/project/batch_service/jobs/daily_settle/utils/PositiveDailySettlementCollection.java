@@ -1,54 +1,46 @@
 package com.project.batch_service.jobs.daily_settle.utils;
 
-import com.project.batch_service.domain.orders.OrderProduct;
-import com.project.batch_service.domain.orders.OrderProductSnapshot;
-import com.project.batch_service.domain.orders.Orders;
-import com.project.batch_service.domain.products.Products;
-import com.project.batch_service.domain.seller.Seller;
+import com.project.batch_service.domain.products.TaxType;
 import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
 import com.project.batch_service.domain.settlement.SettlementStatus;
 import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
+import com.project.batch_service.jobs.daily_settle.dto.OrderProductDTO;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 public class PositiveDailySettlementCollection {
 
-    private final OrderProduct orderProduct;
+    private final OrderProductDTO orderProductDto;
     private final DailySettlementRepository dailySettlementRepository;
-    private final LocalDate settlementDate;
 
-    public PositiveDailySettlementCollection(OrderProduct orderProduct,
-                                             DailySettlementRepository dailySettlementRepository,
-                                             LocalDate settlementDate) {
-        this.orderProduct = orderProduct;
+    public PositiveDailySettlementCollection(OrderProductDTO orderProductDTO, DailySettlementRepository dailySettlementRepository) {
+        this.orderProductDto = orderProductDTO;
         this.dailySettlementRepository = dailySettlementRepository;
-        this.settlementDate = settlementDate;
     }
 
     public DailySettlementDetail getDailySettlementDetail() {
 
-        OrderProductSnapshot orderProductSnapshot = orderProduct.getOrderProductSnapshot();
+        Long dailySettlementId = orderProductDto.getDailySettlementId();
+        if (dailySettlementId == null) { return null; }
 
-        Long orderProductId = orderProduct.getOrderProductId();
-        Orders order = orderProduct.getOrder();
-        Long orderId = order.getOrderId();
-        Products product = orderProduct.getProduct();
-        Long productId = product.getProductId();
-        Seller seller = product.getSeller();
-        Long sellerId = seller.getSellerId();
-        int quantity = orderProductSnapshot.getQuantity();
-
-        DailySettlement dailySettlement = dailySettlementRepository.findBySellerIdAndSettlementDate(sellerId, settlementDate)
+        DailySettlement dailySettlement = dailySettlementRepository.findById(dailySettlementId)
                 .orElse(null);
-
         if (dailySettlement == null) { return null; }
 
-        BigDecimal taxAmount = new TaxCalculator(orderProductSnapshot).getTaxAmount();
-        BigDecimal commissionAmount = new CommissionAmountCalculator(orderProductSnapshot).getCommissionAmount();
-        BigDecimal salesAmount = orderProductSnapshot.getSellPrice().multiply(BigDecimal.valueOf(quantity));
-        BigDecimal settlementAmount = new SettlementAmountCalculator(orderProductSnapshot, salesAmount, commissionAmount, taxAmount).getSettlementAmount();
+        Long orderProductId = orderProductDto.getOrderProductId();
+        Long orderId = orderProductDto.getOrderId();
+        Long productId = orderProductDto.getProductId();
+        TaxType taxType = orderProductDto.getTaxType();
+        int quantity = orderProductDto.getQuantity();
+
+        BigDecimal taxAmount = new TaxCalculator(orderProductDto).getTaxAmount();
+        BigDecimal commissionAmount = new CommissionAmountCalculator(orderProductDto).getCommissionAmount();
+
+        BigDecimal sellPrice = orderProductDto.getSellPrice();
+        BigDecimal salesAmount = sellPrice.multiply(BigDecimal.valueOf(quantity));
+
+        BigDecimal settlementAmount = new SettlementAmountCalculator(orderProductDto, salesAmount, commissionAmount, taxAmount).getSettlementAmount();
 
         return DailySettlementDetail.builder()
                 .dailySettlement(dailySettlement)
@@ -59,11 +51,11 @@ public class PositiveDailySettlementCollection {
                 .quantity(quantity)
                 .salesAmount(salesAmount)
                 .taxAmount(taxAmount)
-                .taxType(orderProductSnapshot.getTaxType())
-                .promotionDiscountAmount(orderProductSnapshot.getPromotionDiscountAmount())
-                .couponDiscountAmount(orderProductSnapshot.getCouponDiscountAmount())
-                .pointUsedAmount(orderProductSnapshot.getPointUsedAmount())
-                .shippingFee(orderProductSnapshot.getDefaultDeliveryAmount())
+                .taxType(taxType)
+                .promotionDiscountAmount(orderProductDto.getPromotionDiscountAmount())
+                .couponDiscountAmount(orderProductDto.getCouponDiscountAmount())
+                .pointUsedAmount(orderProductDto.getPointUsedAmount())
+                .shippingFee(orderProductDto.getDefaultDeliveryAmount())
                 .claimShippingFee(BigDecimal.ZERO)
                 .commissionAmount(commissionAmount)
                 .settlementAmount(settlementAmount)

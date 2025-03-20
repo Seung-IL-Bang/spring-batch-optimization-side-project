@@ -5,6 +5,7 @@ import com.project.batch_service.domain.settlement.DailySettlement;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
 import com.project.batch_service.jobs.JobParameterUtils;
 import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
+import com.project.batch_service.jobs.daily_settle.dto.OrderProductDTO;
 import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
 import com.project.batch_service.jobs.daily_settle.listener.StepPerformanceListener;
 import com.project.batch_service.jobs.daily_settle.steps.*;
@@ -77,16 +78,16 @@ public class DailySettlementJobConfig {
 
     @Bean
     @JobScope
-    public Step plusSettlementDetailStep(@Value("#{jobParameters['chunkSize']}") Integer chunkSize) {
+    public Step plusSettlementDetailStep(@Value("#{jobParameters['chunkSize']}") Integer chunkSize) throws Exception {
         int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         return new StepBuilder(PLUS_SETTLEMENT_STEP, jobRepository)
-                .<OrderProduct, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
+                .<OrderProductDTO, DailySettlementDetail>chunk(CHUNK_SIZE, transactionManager)
                 .reader(plusSettlementDetailStepConfig.dailyPlusSettlementJpaItemReader(null, CHUNK_SIZE))
-                .processor(plusSettlementDetailStepConfig.dailyPlusSettlementItemProcessor(null))
+                .processor(plusSettlementDetailStepConfig.dailyPlusSettlementItemProcessor())
                 .writer(plusSettlementDetailStepConfig.dailyPlusSettlementItemWriter())
                 .listener((StepExecutionListener) stepPerformanceListener)
-                .listener((ItemReadListener<OrderProduct>) stepPerformanceListener)
-                .listener((ItemProcessListener<OrderProduct, DailySettlementDetail>) stepPerformanceListener)
+                .listener((ItemReadListener<OrderProductDTO>) stepPerformanceListener)
+                .listener((ItemProcessListener<OrderProductDTO, DailySettlementDetail>) stepPerformanceListener)
                 .listener((ItemWriteListener<DailySettlementDetail>) stepPerformanceListener)
                 .build();
     }

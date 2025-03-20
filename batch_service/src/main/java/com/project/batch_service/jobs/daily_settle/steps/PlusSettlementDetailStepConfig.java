@@ -1,28 +1,31 @@
 package com.project.batch_service.jobs.daily_settle.steps;
 
-import com.project.batch_service.domain.orders.OrderProduct;
+import com.project.batch_service.domain.products.TaxType;
 import com.project.batch_service.domain.settlement.DailySettlementDetail;
-import com.project.batch_service.domain.settlement.repository.DailySettlementDetailRepository;
 import com.project.batch_service.domain.settlement.repository.DailySettlementRepository;
 import com.project.batch_service.jobs.JobParameterUtils;
-import com.project.batch_service.jobs.daily_settle.steps.query.PurchaseConfirmedJpaQueryProvider;
+import com.project.batch_service.jobs.daily_settle.dto.OrderProductDTO;
 import com.project.batch_service.jobs.daily_settle.utils.PositiveDailySettlementCollection;
-import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.JpaPagingItemReader;
-import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.batch.item.database.JdbcPagingItemReader;
+import org.springframework.batch.item.database.Order;
+import org.springframework.batch.item.database.PagingQueryProvider;
+import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
+import org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
+import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -36,39 +39,111 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PlusSettlementDetailStepConfig {
 
-    private final EntityManagerFactory entityManagerFactory;
+    private final DataSource dataSource;
     private final DailySettlementRepository dailySettlementRepository;
-    private final DailySettlementDetailRepository dailySettlementDetailRepository;
 
     @Bean
     @StepScope
-    public JpaPagingItemReader<OrderProduct> dailyPlusSettlementJpaItemReader(
+    public JdbcPagingItemReader<OrderProductDTO> dailyPlusSettlementJpaItemReader(
             @Value("#{jobParameters['settlementDate']}") String settlementDateStr,
             @Value("#{jobParameters['chunkSize']}") Integer chunkSize
-    ) {
+    ) throws Exception {
         int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         LocalDate date = JobParameterUtils.parseSettlementDate(settlementDateStr);
         LocalDateTime startTime = date.atStartOfDay();
         LocalDateTime endTime = date.plusDays(1).atStartOfDay();
 
-        PurchaseConfirmedJpaQueryProvider queryProvider = new PurchaseConfirmedJpaQueryProvider(startTime, endTime);
+        SqlPagingQueryProviderFactoryBean queryProviderFactory = new SqlPagingQueryProviderFactoryBean();
+        queryProviderFactory.setDataSource(dataSource);
 
-        return new JpaPagingItemReaderBuilder<OrderProduct>()
-                .name("dailyPlusSettlementJpaItemReader")
-                .pageSize(CHUNK_SIZE)
+        // 필요한 모든 필드를 한 번에 조회하는 SELECT 절
+        queryProviderFactory.setSelectClause("""
+                SELECT
+                    op.order_product_id,
+                    o.order_id,
+                    p.product_id,
+                    s.seller_id,
+                    ops.quantity,
+                    ops.sell_price,
+                    ops.supply_price,
+                    s.commission_rate,
+                    ops.tax_type,
+                    ops.promotion_discount_amount,
+                    ops.coupon_discount_amount,
+                    ops.point_used_amount,
+                    ops.default_delivery_amount,
+                    ds.settlement_id
+                """);
+
+        // 모든 필요한 테이블을 JOIN
+        queryProviderFactory.setFromClause("""
+                FROM order_product op
+                JOIN order_product_snapshot ops ON op.order_product_snapshot_id = ops.order_product_snapshot_id
+                JOIN orders o ON op.order_id = o.order_id
+                JOIN products p ON op.product_id = p.product_id
+                JOIN seller s ON p.seller_id = s.seller_id
+                LEFT JOIN daily_settlement ds ON s.seller_id = ds.seller_id AND ds.settlement_date = :settlementDate
+                """);
+
+        // 필터링 조건
+        queryProviderFactory.setWhereClause("""
+                WHERE op.purchase_confirmed_at BETWEEN :startTime AND :endTime
+                AND op.delivery_status = 'DELIVERED'
+                """);
+
+        // 정렬 기준 (성능을 위해 인덱스가 있는 컬럼 사용)
+        Map<String, Order> sortKeys = new HashMap<>();
+        sortKeys.put("op.order_product_id", Order.ASCENDING);
+        queryProviderFactory.setSortKeys(sortKeys);
+
+        // 쿼리 파라미터 설정
+        Map<String, Object> parameterValues = new HashMap<>();
+        parameterValues.put("startTime", Timestamp.valueOf(startTime));
+        parameterValues.put("endTime", Timestamp.valueOf(endTime));
+        parameterValues.put("settlementDate", date);
+
+        PagingQueryProvider queryProvider = queryProviderFactory.getObject();
+
+        // RowMapper 구현 (ResultSet을 DTO로 변환)
+        RowMapper<OrderProductDTO> rowMapper = (rs, rowNum) -> {
+            OrderProductDTO dto = new OrderProductDTO();
+            dto.setOrderProductId(rs.getLong("order_product_id"));
+            dto.setOrderId(rs.getLong("order_id"));
+            dto.setProductId(rs.getLong("product_id"));
+            dto.setSellerId(rs.getLong("seller_id"));
+            dto.setQuantity(rs.getInt("quantity"));
+            dto.setSellPrice(rs.getBigDecimal("sell_price"));
+            dto.setSupplyPrice(rs.getBigDecimal("supply_price"));
+            dto.setCommissionRate(rs.getDouble("commission_rate"));
+            dto.setTaxType(TaxType.valueOf(rs.getString("tax_type")));
+            dto.setPromotionDiscountAmount(rs.getBigDecimal("promotion_discount_amount"));
+            dto.setCouponDiscountAmount(rs.getBigDecimal("coupon_discount_amount"));
+            dto.setPointUsedAmount(rs.getBigDecimal("point_used_amount"));
+            dto.setDefaultDeliveryAmount(rs.getBigDecimal("default_delivery_amount"));
+
+            Long dailySettlementId = rs.getLong("settlement_id");
+            if (rs.wasNull()) {
+                dto.setDailySettlementId(null);
+            } else {
+                dto.setDailySettlementId(dailySettlementId);
+            }
+            return dto;
+        };
+
+        return new JdbcPagingItemReaderBuilder<OrderProductDTO>()
+                .name("optimizedDailySettlementItemReader")
+                .dataSource(dataSource)
                 .queryProvider(queryProvider)
-                .entityManagerFactory(entityManagerFactory)
+                .parameterValues(parameterValues)
+                .pageSize(CHUNK_SIZE)
+                .rowMapper(rowMapper)
                 .build();
     }
 
     @Bean
-    @StepScope
-    public ItemProcessor<OrderProduct, DailySettlementDetail> dailyPlusSettlementItemProcessor(
-            @Value("#{jobParameters['settlementDate']}") String settlementDateStr
-    ) {
-        LocalDate settlementDate = JobParameterUtils.parseSettlementDate(settlementDateStr);
-        return (orderProduct) -> {
-            PositiveDailySettlementCollection collection = new PositiveDailySettlementCollection(orderProduct, dailySettlementRepository, settlementDate);
+    public ItemProcessor<OrderProductDTO, DailySettlementDetail> dailyPlusSettlementItemProcessor() {
+        return (orderProductDto) -> {
+            PositiveDailySettlementCollection collection = new PositiveDailySettlementCollection(orderProductDto, dailySettlementRepository);
             return collection.getDailySettlementDetail();
         };
     }
