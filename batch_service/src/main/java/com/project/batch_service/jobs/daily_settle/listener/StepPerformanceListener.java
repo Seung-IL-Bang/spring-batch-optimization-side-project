@@ -1,8 +1,6 @@
 package com.project.batch_service.jobs.daily_settle.listener;
 
-import com.project.batch_service.domain.orders.OrderProduct;
-import com.project.batch_service.domain.settlement.DailySettlementDetail;
-import com.project.batch_service.jobs.daily_settle.dto.OrderProductDTO;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
 import org.springframework.batch.item.Chunk;
@@ -10,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class StepPerformanceListener implements StepExecutionListener, ItemReadListener<OrderProductDTO>,
-        ItemProcessListener<OrderProductDTO, DailySettlementDetail>, ItemWriteListener<DailySettlementDetail> {
+public class StepPerformanceListener<R, W> implements StepExecutionListener, ItemReadListener<R>,
+        ItemProcessListener<R, W>, ItemWriteListener<W> {
 
     private long stepStartTime;
     private long readStartTime;
@@ -89,7 +87,7 @@ public class StepPerformanceListener implements StepExecutionListener, ItemReadL
     }
 
     @Override
-    public void afterRead(OrderProductDTO item) {
+    public void afterRead(R item) {
         readCount++;
 
         // 청크의 마지막 항목을 읽었거나, 청크 크기의 배수일 때만 시간 측정 및 로깅
@@ -111,7 +109,7 @@ public class StepPerformanceListener implements StepExecutionListener, ItemReadL
 
     // Item Process 리스너 메서드
     @Override
-    public void beforeProcess(OrderProductDTO item) {
+    public void beforeProcess(R item) {
         // 청크의 첫 번째 항목을 처리 시작할 때만 시간 측정 시작
         if (processCount % chunkSize == 0) {
             processStartTime = System.currentTimeMillis();
@@ -119,7 +117,7 @@ public class StepPerformanceListener implements StepExecutionListener, ItemReadL
     }
 
     @Override
-    public void afterProcess(OrderProductDTO item, DailySettlementDetail result) {
+    public void afterProcess(R item, W result) {
         processCount++;
 
         // 청크의 마지막 항목을 처리했거나, 청크 크기의 배수일 때만 시간 측정 및 로깅
@@ -134,18 +132,18 @@ public class StepPerformanceListener implements StepExecutionListener, ItemReadL
     }
 
     @Override
-    public void onProcessError(OrderProductDTO item, Exception ex) {
-        log.error("처리 오류 (항목 ID: {}): {}", item.getOrderProductId(), ex.getMessage(), ex);
+    public void onProcessError(R item, Exception ex) {
+        log.error("처리 오류 : {}", ex.getMessage(), ex);
     }
 
     // Item Write 리스너 메서드
     @Override
-    public void beforeWrite(Chunk<? extends DailySettlementDetail> items) {
+    public void beforeWrite(Chunk<? extends W> items) {
         writeStartTime = System.currentTimeMillis();
     }
 
     @Override
-    public void afterWrite(Chunk<? extends DailySettlementDetail> items) {
+    public void afterWrite(Chunk<? extends W> items) {
         long writeEndTime = System.currentTimeMillis();
         long writeTime = writeEndTime - writeStartTime;
         totalWriteTime += writeTime;
@@ -164,7 +162,7 @@ public class StepPerformanceListener implements StepExecutionListener, ItemReadL
     }
 
     @Override
-    public void onWriteError(Exception ex, Chunk<? extends DailySettlementDetail> items) {
+    public void onWriteError(Exception ex, Chunk<? extends W> items) {
         log.error("쓰기 오류 ({}개 항목): {}", items.size(), ex.getMessage(), ex);
     }
 }
