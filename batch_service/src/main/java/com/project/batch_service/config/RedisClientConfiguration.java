@@ -13,19 +13,4 @@ public class RedisClientConfiguration {
     public RedisClient redisClient() {
         return RedisClient.create("redis://localhost:6379");
     }
-
-    @Bean(destroyMethod = "close")
-    public StatefulRedisConnection<String, String> redisConnection(RedisClient redisClient) {
-        return redisClient.connect();
-    }
-
-    @Bean
-    public RedisAsyncCommands<String, String> redisAsyncCommands(StatefulRedisConnection<String, String> connection) {
-        return connection.async();
-    }
-
-    @Bean
-    public RedisCommands<String, String> redisCommands(StatefulRedisConnection<String, String> connection) {
-        return connection.sync();
-    }
 }
