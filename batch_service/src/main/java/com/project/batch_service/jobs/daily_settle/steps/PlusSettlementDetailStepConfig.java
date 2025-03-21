@@ -227,7 +227,7 @@ public class PlusSettlementDetailStepConfig {
                         commission_amount,
                         settlement_amount,
                         created_at,
-                        updated_ㅁt
+                        updated_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
