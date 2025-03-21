@@ -12,8 +12,6 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import jakarta.persistence.EntityManagerFactory;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -105,7 +103,6 @@ public class AggregateDailySettlementStepConfig {
             @Value("#{jobParameters['settlementDate']}") String settlementDateStr,
             @Value("#{jobParameters['chunkSize']}") Integer chunkSize
     ) {
-        int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         LocalDate settlementDate = JobParameterUtils.parseSettlementDate(settlementDateStr);
 
         // 상세 데이터를 가져오는 쿼리 (집계 없이 원본 데이터만 가져옴)
