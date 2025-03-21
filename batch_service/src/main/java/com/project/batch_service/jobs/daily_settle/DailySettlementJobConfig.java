@@ -109,8 +109,8 @@ public class DailySettlementJobConfig {
         int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         return new StepBuilder(AGGREGATE_SETTLEMENT_DETAIL_STEP, jobRepository)
                 .<SettlementAggregate, SettlementAggregate>chunk(CHUNK_SIZE, transactionManager)
-                .reader(aggregateDailySettlementStepConfig.settlementDetailReader(null))
-                .writer(aggregateDailySettlementStepConfig.optimizedRedisAggregateWriter())
+                .reader(aggregateDailySettlementStepConfig.settlementDetailReader(null, CHUNK_SIZE))
+                .writer(aggregateDailySettlementStepConfig.luaScriptDirectWriter())
                 .listener((StepExecutionListener) stepPerformanceListener)
                 .listener((ItemReadListener<SettlementAggregate>) stepPerformanceListener)
                 .listener((ItemProcessListener<SettlementAggregate, SettlementAggregate>) stepPerformanceListener)
@@ -123,13 +123,12 @@ public class DailySettlementJobConfig {
     public Step aggregateSettlementStep(@Value("#{jobParameters['chunkSize']}") Integer chunkSize) {
         int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         return new StepBuilder(AGGREGATE_SETTLEMENT_STEP2, jobRepository)
-                .<SettlementAggregationResult, DailySettlement>chunk(CHUNK_SIZE, transactionManager)
-                .reader(aggregateDailySettlementStepConfig.redisAggregationResultReader(null))
-                .processor(aggregateDailySettlementStepConfig.aggregateDailySettlementProcessor())
-                .writer(aggregateDailySettlementStepConfig.aggregateDailySettlementWriter())
+                .<SettlementAggregationResult, SettlementAggregationResult>chunk(CHUNK_SIZE, transactionManager)
+                .reader(aggregateDailySettlementStepConfig.optimizedRedisAggregationResultReader(null))
+                .writer(aggregateDailySettlementStepConfig.optimizedAggregateDailySettlementJdbcWriter())
                 .listener((StepExecutionListener) stepPerformanceListener)
                 .listener((ItemReadListener<SettlementAggregationResult>) stepPerformanceListener)
-                .listener((ItemProcessListener<SettlementAggregationResult, DailySettlement>) stepPerformanceListener)
+                .listener((ItemProcessListener<SettlementAggregationResult, SettlementAggregationResult>) stepPerformanceListener)
                 .listener((ItemWriteListener<SettlementAggregationResult>) stepPerformanceListener)
                 .build();
     }
