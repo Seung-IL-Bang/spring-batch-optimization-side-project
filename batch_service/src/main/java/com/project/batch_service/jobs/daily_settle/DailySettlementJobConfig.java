@@ -8,6 +8,7 @@ import com.project.batch_service.jobs.daily_settle.dto.ClaimRefundDto;
 import com.project.batch_service.jobs.daily_settle.dto.OrderProductDTO;
 import com.project.batch_service.jobs.daily_settle.dto.SellerDto;
 import com.project.batch_service.jobs.daily_settle.listener.StepPerformanceListener;
+import com.project.batch_service.jobs.daily_settle.listener.StepPerformanceListener2;
 import com.project.batch_service.jobs.daily_settle.steps.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.*;
@@ -38,8 +39,10 @@ public class DailySettlementJobConfig {
     private final PlusSettlementDetailStepConfig plusSettlementDetailStepConfig;
     private final MinusSettlementDetailStepConfig minusSettlementDetailStepConfig;
     private final AggregateDailySettlementStepConfig aggregateDailySettlementStepConfig;
+    private final AggregateDailySettlementStepConfig2 aggregateDailySettlementStepConfig2;
 
     private final StepPerformanceListener stepPerformanceListener;
+    private final StepPerformanceListener2 stepPerformanceListener2;
 
     @Bean
     public Job dailySettlementJob() throws Exception {
@@ -49,7 +52,8 @@ public class DailySettlementJobConfig {
                 .next(createDailySettlementStep(null))
                 .next(plusSettlementDetailStep(null))
                 .next(minusSettlementDetailStep(null))
-                .next(aggregateSettlementDetailStep(null))
+                .next(aggregateSettlementDetailStep2(null))
+                .next(aggregateSettlementStep2(null))
                 .build();
     }
 
@@ -113,6 +117,41 @@ public class DailySettlementJobConfig {
                 .reader(aggregateDailySettlementStepConfig.aggregationResultReader(null, CHUNK_SIZE))
                 .processor(aggregateDailySettlementStepConfig.aggregateDailySettlementProcessor())
                 .writer(aggregateDailySettlementStepConfig.aggregateDailySettlementWriter())
+                .listener((StepExecutionListener) stepPerformanceListener2)
+                .listener((ItemReadListener<AggregateDailySettlementStepConfig.SettlementAggregationResult>) stepPerformanceListener2)
+                .listener((ItemProcessListener<AggregateDailySettlementStepConfig.SettlementAggregationResult, DailySettlement>) stepPerformanceListener2)
+                .listener((ItemWriteListener<DailySettlement>) stepPerformanceListener2)
+                .build();
+    }
+
+    @Bean
+    @JobScope
+    public Step aggregateSettlementDetailStep2(@Value("#{jobParameters['chunkSize']}") Integer chunkSize) {
+        int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
+        return new StepBuilder(AGGREGATE_SETTLEMENT_DETAIL_STEP, jobRepository)
+                .<AggregateDailySettlementStepConfig2.SettlementAggregate, AggregateDailySettlementStepConfig2.SettlementAggregate>chunk(CHUNK_SIZE, transactionManager)
+                .reader(aggregateDailySettlementStepConfig2.settlementDetailReader(null, CHUNK_SIZE))
+                .writer(aggregateDailySettlementStepConfig2.luaScriptDirectWriter())
+                .listener((StepExecutionListener) stepPerformanceListener2)
+                .listener((ItemReadListener<AggregateDailySettlementStepConfig2.SettlementAggregate>) stepPerformanceListener2)
+                .listener((ItemProcessListener<AggregateDailySettlementStepConfig2.SettlementAggregate, AggregateDailySettlementStepConfig2.SettlementAggregate>) stepPerformanceListener2)
+                .listener((ItemWriteListener<AggregateDailySettlementStepConfig2.SettlementAggregate>) stepPerformanceListener2)
+                .build();
+    }
+
+    @Bean
+    @JobScope
+    public Step aggregateSettlementStep2(@Value("#{jobParameters['chunkSize']}") Integer chunkSize) {
+        int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
+        return new StepBuilder(AGGREGATE_SETTLEMENT_STEP2, jobRepository)
+                .<AggregateDailySettlementStepConfig2.SettlementAggregationResult, AggregateDailySettlementStepConfig2.SettlementAggregationResult>chunk(CHUNK_SIZE, transactionManager)
+                .reader(aggregateDailySettlementStepConfig2.optimizedRedisAggregationResultReader(null))
+//                .processor(aggregateDailySettlementStepConfig2.aggregateDailySettlementProcessor2())
+                .writer(aggregateDailySettlementStepConfig2.optimizedAggregateDailySettlementJdbcWriter())
+                .listener((StepExecutionListener) stepPerformanceListener2)
+                .listener((ItemReadListener<AggregateDailySettlementStepConfig2.SettlementAggregationResult>) stepPerformanceListener2)
+                .listener((ItemProcessListener<AggregateDailySettlementStepConfig2.SettlementAggregationResult, AggregateDailySettlementStepConfig2.SettlementAggregationResult>) stepPerformanceListener2)
+                .listener((ItemWriteListener<AggregateDailySettlementStepConfig2.SettlementAggregationResult>) stepPerformanceListener2)
                 .build();
     }
 }

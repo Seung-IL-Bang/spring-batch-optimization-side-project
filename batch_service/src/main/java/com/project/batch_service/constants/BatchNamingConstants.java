@@ -17,6 +17,9 @@ public final class BatchNamingConstants {
         public static final String PLUS_SETTLEMENT_STEP = getStepName(Job.DAILY_SETTLE_JOB, "plusSettlementStep");
         public static final String MINUS_SETTLEMENT_STEP = getStepName(Job.DAILY_SETTLE_JOB, "minusSettlementStep");
         public static final String AGGREGATE_SETTLEMENT_STEP = getStepName(Job.DAILY_SETTLE_JOB, "aggregateSettlementStep");
+        public static final String AGGREGATE_SETTLEMENT_DETAIL_STEP = getStepName(Job.DAILY_SETTLE_JOB, "aggregateSettlementDetailStep");
+        public static final String AGGREGATE_SETTLEMENT_STEP2 = getStepName(Job.DAILY_SETTLE_JOB, "aggregateSettlementStep2");
+
 
     }
 
