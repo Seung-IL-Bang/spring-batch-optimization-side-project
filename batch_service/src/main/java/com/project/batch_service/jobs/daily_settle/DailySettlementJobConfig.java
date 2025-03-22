@@ -58,7 +58,7 @@ public class DailySettlementJobConfig {
         int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         return new StepBuilder(PURCHASE_CONFIRMED_STEP, jobRepository)
                 .<OrderProduct, OrderProduct>chunk(CHUNK_SIZE, transactionManager)
-                .reader(purchaseConfirmStepConfig.deliveryCompletedJpaItemReader(null, CHUNK_SIZE))
+                .reader(purchaseConfirmStepConfig.deliveryCompletedJpaItemReader(null))
                 .writer(purchaseConfirmStepConfig.purchaseConfirmedItemWriter())
                 .build();
     }
