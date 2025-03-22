@@ -33,7 +33,7 @@ public class PurchaseConfirmStepConfig {
 
     @Bean
     @StepScope
-    public JdbcCursorItemReader<OrderProduct> deliveryCompletedJpaItemReader(
+    public JdbcCursorItemReader<OrderProduct> deliveryCompletedJdbcItemReader(
             @Value("#{jobParameters['settlementDate']}") String settlementDateStr) {
 
         LocalDate date = JobParameterUtils.parseSettlementDate(settlementDateStr);
