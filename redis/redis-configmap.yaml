@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  labels:
+    app: redis
+data:
+  redis.conf: |
+    # Redis configuration optimized for Spring Batch operations
+    
+    # Basic configuration
+    port 6379
+    bind 0.0.0.0
+    protected-mode yes
+    
+    # Performance tuning
+    timeout 0
+    tcp-keepalive 300
+    
+    # Memory management
+    maxmemory 800mb
+    maxmemory-policy volatile-lru
+    
+    # Persistence options
+    save 900 1
+    save 300 10
+    save 60 10000
+    
+    # Append-only file persistence
+    appendonly yes
+    appendfsync everysec
+    
+    # Lua scripts
+    lua-time-limit 5000
+    
+    # Advanced options for batch operations
+    io-threads 4
+    io-threads-do-reads yes
+    
+    # Client output buffer limits
+    client-output-buffer-limit normal 0 0 0
+    client-output-buffer-limit replica 256mb 64mb 60
+    client-output-buffer-limit pubsub 32mb 8mb 60
