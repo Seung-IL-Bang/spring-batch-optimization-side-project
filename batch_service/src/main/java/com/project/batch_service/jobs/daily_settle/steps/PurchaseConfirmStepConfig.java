@@ -1,21 +1,18 @@
 package com.project.batch_service.jobs.daily_settle.steps;
 
 import com.project.batch_service.domain.orders.OrderProduct;
-import com.project.batch_service.domain.orders.repository.OrderProductRepository;
 import com.project.batch_service.jobs.JobParameterUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.JdbcPagingItemReader;
-import org.springframework.batch.item.database.Order;
-import org.springframework.batch.item.database.PagingQueryProvider;
-import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
-import org.springframework.batch.item.database.support.SqlPagingQueryProviderFactoryBean;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
+import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,8 +24,6 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
@@ -38,45 +33,36 @@ public class PurchaseConfirmStepConfig {
 
     @Bean
     @StepScope
-    public JdbcPagingItemReader<OrderProduct> deliveryCompletedJpaItemReader(
-            @Value("#{jobParameters['settlementDate']}") String settlementDateStr,
-            @Value("#{jobParameters['chunkSize']}") Integer chunkSize) throws Exception {
+    public JdbcCursorItemReader<OrderProduct> deliveryCompletedJdbcItemReader(
+            @Value("#{jobParameters['settlementDate']}") String settlementDateStr) {
 
-        int CHUNK_SIZE = JobParameterUtils.parseChunkSize(chunkSize);
         LocalDate date = JobParameterUtils.parseSettlementDate(settlementDateStr);
         LocalDateTime startTime = date.atStartOfDay();
         LocalDateTime endTime = date.plusDays(1).atStartOfDay();
 
-        // 파라미터 설정
-        Map<String, Object> parameterValues = new HashMap<>();
-        parameterValues.put("startTime", startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        parameterValues.put("endTime", endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        // SQL 쿼리 작성
+        String sql = """
+            SELECT op.*
+            FROM order_product op
+            LEFT JOIN claim cl ON op.order_product_id = cl.order_product_id
+            WHERE op.delivery_completed_at BETWEEN ? AND ?
+            AND op.delivery_status = 'DELIVERED'
+            AND op.purchase_confirmed_at IS NULL
+            AND (cl.claim_id IS NULL OR cl.completed_at IS NOT NULL)
+            ORDER BY op.order_product_id ASC
+            """;
 
-        SqlPagingQueryProviderFactoryBean queryProviderFactory = new SqlPagingQueryProviderFactoryBean();
-        queryProviderFactory.setDataSource(dataSource);
+        // PreparedStatement 파라미터 설정
+        Object[] parameters = new Object[] {
+                startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                endTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+        };
 
-        queryProviderFactory.setSelectClause("SELECT op.*");
-        queryProviderFactory.setFromClause("FROM order_product op LEFT JOIN claim cl ON op.order_product_id = cl.order_product_id");
-        queryProviderFactory.setWhereClause("""
-                WHERE op.delivery_completed_at BETWEEN :startTime AND :endTime
-                AND op.delivery_status = 'DELIVERED'
-                AND op.purchase_confirmed_at IS NULL
-                AND (cl.claim_id IS NULL OR cl.completed_at IS NOT NULL)
-                """);
-
-        // 정렬 키 설정 - orderProductId로 정렬하여 일관된 페이징
-        Map<String, Order> sortKeys = new HashMap<>();
-        sortKeys.put("op.order_product_id", Order.ASCENDING);
-        queryProviderFactory.setSortKeys(sortKeys);
-
-        PagingQueryProvider queryProvider = queryProviderFactory.getObject();
-
-        return new JdbcPagingItemReaderBuilder<OrderProduct>()
+        return new JdbcCursorItemReaderBuilder<OrderProduct>()
                 .name("deliveryCompletedJdbcItemReader")
                 .dataSource(dataSource)
-                .queryProvider(queryProvider)
-                .parameterValues(parameterValues)
-                .pageSize(CHUNK_SIZE)
+                .sql(sql)
+                .preparedStatementSetter(new ArgumentPreparedStatementSetter(parameters))
                 .rowMapper(new BeanPropertyRowMapper<>(OrderProduct.class))
                 .build();
     }
